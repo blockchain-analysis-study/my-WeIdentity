@@ -22,6 +22,8 @@ package com.webank.weid.protocol.base;
 import lombok.Data;
 
 /**
+ *
+ * cpt超级超级基础类型 (只有两个字段, Id 和 Version)
  * The base data structure for the SDK API register CPT info.
  *
  * @author lingfenghe

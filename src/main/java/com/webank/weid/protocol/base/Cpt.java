@@ -32,16 +32,19 @@ import lombok.Data;
 public class Cpt {
 
     /**
+     * Cpt 的超级超级基础类型
      * Base info of cpt.
      */
     protected CptBaseInfo cptBaseInfo = new CptBaseInfo();
 
     /**
+     * cpt的模板 (json-schame)
      * The cpt json schema.
      */
     protected Map<String, Object> cptJsonSchema;
 
     /**
+     * Cpt 的数据
      * The meta data.
      */
     protected MetaData metaData = new MetaData();
@@ -155,27 +158,33 @@ public class Cpt {
     }
 
     /**
+     *
+     * cpt 的数据
      * The base data structure for CPT meta data.
      */
     @Data
     public static class MetaData {
 
         /**
+         * 发布者
          * The weIdentity DID of the publisher who register this CPT.
          */
         private String cptPublisher;
 
         /**
+         * 发布者对 (发布者WeId|cptJsonSchame) 的签名
          * The cpt signature for the weIdentity DID and json schema data in Base64.
          */
         private String cptSignature;
 
         /**
+         * 创建时间
          * The cpt create timestamp.
          */
         private long created;
 
         /**
+         * 更新时间
          * The cpt update timestamp.
          */
         private long updated;

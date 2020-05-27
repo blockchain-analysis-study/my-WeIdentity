@@ -30,6 +30,7 @@ import lombok.Data;
 public class PublicKeyProperty {
 
     /**
+     * todo 索引Id
      * Required: The id.
      */
     private String id;
@@ -40,11 +41,13 @@ public class PublicKeyProperty {
     private String type;
 
     /**
+     * todo  PubKey 的拥有者
      * Required: The owner.
      */
     private String owner;
 
     /**
+     * PubKey
      * Required: The public key.
      */
     private String publicKey;

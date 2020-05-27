@@ -32,6 +32,7 @@ import com.webank.weid.constant.WeIdConstant.PublicKeyType;
 public class AuthenticationProperty {
 
     /**
+     * TODO 目前 默认只支持 ECDSA
      * Required: The type.
      */
     private String type = PublicKeyType.SECP256K1.getTypeName();

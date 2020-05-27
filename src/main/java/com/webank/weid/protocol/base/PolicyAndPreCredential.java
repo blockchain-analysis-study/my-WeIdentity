@@ -27,6 +27,9 @@ import lombok.Setter;
 import com.webank.weid.protocol.inf.JsonSerializer;
 
 /**
+ *
+ * todo 策略和未完整的Credential
+ *
  * policy and pre-credential.
  *
  * @author tonychen 2019年12月3日
@@ -43,15 +46,18 @@ public class PolicyAndPreCredential implements JsonSerializer {
     /**
      * policy and challenge.
      */
+    // 策略或挑战
     private PolicyAndChallenge policyAndChallenge;
 
     /**
      * credential based on CPT 110.
      */
+    // 基于 CPT 110 的 Credential
     private CredentialPojo preCredential;
 
     /**
      * extra data.
      */
+    // 拓展信息
     private Map<String, String> extra;
 }

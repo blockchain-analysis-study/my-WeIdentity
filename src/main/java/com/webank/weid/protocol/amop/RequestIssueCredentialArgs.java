@@ -54,6 +54,8 @@ public class RequestIssueCredentialArgs extends AmopBaseMsgArgs {
     private String claim;
 
     /**
+     * todo 认证方式, 这东西中只有 三个字段,   WeId/PubKey/PriKey
+     *
      * user's authentication.
      */
     private WeIdAuthentication auth;

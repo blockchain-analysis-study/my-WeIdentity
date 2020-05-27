@@ -380,12 +380,14 @@ public class CptServiceImpl extends AbstractService implements CptService {
         return DataToolUtils.serialize(cptJsonSchemaNew);
     }
 
+    // todo 根据 CPT Id 去chain 上查回, Credential 需要用的 Claim jsonSchame / CredentialTemplate的 Pubkey 和 Proof
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.CptService#queryCredentialTemplate(java.lang.Integer)
      */
     @Override
     public ResponseData<CredentialTemplateEntity> queryCredentialTemplate(Integer cptId) {
 
+        // todo 根据 CPT Id 去chain 上查回, Credential 需要用的 Claim jsonSchame / CredentialTemplate的 Pubkey 和 Proof
         return cptServiceEngine.queryCredentialTemplate(cptId);
     }
 }

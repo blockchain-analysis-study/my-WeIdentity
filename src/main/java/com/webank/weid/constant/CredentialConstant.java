@@ -20,6 +20,8 @@
 package com.webank.weid.constant;
 
 /**
+ *
+ * TODO Credential的一些字段
  * The Class CredentialConstant.
  *
  * @author chaoxinhu
@@ -28,17 +30,20 @@ package com.webank.weid.constant;
 public final class CredentialConstant {
 
     /**
+     * todo 默认的 @content 的url
      * The Constant default Credential Context.
      */
     public static final String DEFAULT_CREDENTIAL_CONTEXT =
         "https://github.com/WeBankFinTech/WeIdentity/blob/master/context/v1";
 
     /**
+     * todo Credential Json 中默认的 content的字段名
      * The Constant default Credential Context field name in Credential Json String.
      */
     public static final String CREDENTIAL_CONTEXT_PORTABLE_JSON_FIELD = "@context";
 
     /**
+     * todo Credential Json 中默认的 Credential 类型
      * The Constant default Credential type.
      */
     public static final String DEFAULT_CREDENTIAL_TYPE = "VerifiableCredential";
@@ -94,6 +99,7 @@ public final class CredentialConstant {
     public static final String CREDENTIAL_META_KEY_CONTEXT = "context";
 
     /**
+     * todo 选择 披露的信息 字段name
      * The Constant is an field in claimPolicy.
      */
     public static final String CLAIM_POLICY_DISCLOSED_FIELD = "fieldsToBeDisclosed";

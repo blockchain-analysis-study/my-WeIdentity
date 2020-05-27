@@ -208,15 +208,18 @@ public class AmopServiceImpl extends BaseService implements AmopService {
         );
     }
 
+    // todo 请求发布 Credential
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.AmopService#requestIssueCredential(java.lang.String,
      * com.webank.weid.protocol.amop.RequestIssueCredentialArgs)
      */
     @Override
     public ResponseData<RequestIssueCredentialResponse> requestIssueCredential(
-        String toOrgId,
-        RequestIssueCredentialArgs args) {
+        String toOrgId,                 // 接收方的 WeId <一般是当前req发起者的WeId>
+        RequestIssueCredentialArgs args //
+    ) {
 
+        // 校验请求入参
         int checkErrorCode = checkIssueCredentialArgs(args).getCode();
         if (checkErrorCode != ErrorCode.SUCCESS.getCode()) {
             logger.error(
@@ -227,9 +230,19 @@ public class AmopServiceImpl extends BaseService implements AmopService {
         }
 
         //1. user genenerate credential based on CPT111
+        //
+        // 基于 系统 CPT模板 111 生成用户的 Credential
+
+        // 提取 请求入参中的 PolicyAndPreCredential
         PolicyAndPreCredential policyAndPreCredential = args.getPolicyAndPreCredential();
+
+        // 提取 请求中的  Claim 信息
         String claimJson = args.getClaim();
+
+        // 提取 PreCredential 信息
         CredentialPojo preCredential = policyAndPreCredential.getPreCredential();
+
+        //
         ResponseData<CredentialPojo> userCredentialResp =
             credentialPojoService.prepareZkpCredential(
                 preCredential,

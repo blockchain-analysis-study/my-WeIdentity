@@ -839,6 +839,8 @@ public final class CredentialPojoUtils {
     }
 
     /**
+     * 形式化验证
+     * 根据其 input参数检查 给定的CreateCredentialPojoArgs有效性。
      * Check the given CreateCredentialPojoArgs validity based on its input params.
      *
      * @param args CreateCredentialPojoArgs
@@ -867,6 +869,8 @@ public final class CredentialPojoUtils {
     }
 
     /**
+     *
+     * 校验  认证方式
      * Check WeIdAuthentication validity.
      *
      * @param callerAuth WeIdAuthentication

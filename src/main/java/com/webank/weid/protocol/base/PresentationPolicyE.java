@@ -37,6 +37,14 @@ import com.webank.weid.protocol.inf.JsonSerializer;
 import com.webank.weid.util.DataToolUtils;
 
 /**
+ *
+ * todo 策略画像
+ *
+ * PresentationPolicyE，是Presentation的“政策”。一般来说，
+ * 我们在一项具体业务的时候，可能会让用户提交多个类型的凭证Credential，
+ * 比如公司入职，可能会让你提交身份证凭证、学历证凭证、学位证凭证、offer letter凭证。
+ * 具体提交什么样的凭证（cptId），每个凭证的关键属性项需要那些，就需要在policy里面提前定义好。
+ *
  * The base data structure to handle Credential info.
  *
  * @author junqizhang 2019.04
@@ -58,27 +66,34 @@ public class PresentationPolicyE extends Version implements JsonSerializer {
     private Integer id;
 
     /**
+     * todo 代表谁发布此 画像政策
      * represent who publish this presentation policy.
      */
     private String orgId;
 
     /**
+     *
+     * 代表谁(WeId)发布此 画像政策
      * represent who publish this presentation policy.
      */
     private String policyPublisherWeId;
 
     /**
+     *
+     * 指定需要哪些属性的credential
      * specify which properties in which credential are needed.
      */
     private Map<Integer, ClaimPolicy> policy;
 
     /**
+     *
+     * 策略演示者可以使用的其他数据存储一些特定的业务数据。
      * extra data which policy presenter can use it store some specific business data.
      */
     private Map<String, String> extra;
 
     /**
-     * 新增字段，标识是支持零知识证明的policy还是原来的.
+     * todo 新增字段，标识是支持 `零知识证明的policy` 还是 `原来的`.
      */
     private String policyType = "original";
 
@@ -89,6 +104,9 @@ public class PresentationPolicyE extends Version implements JsonSerializer {
     }
 
     /**
+     *
+     * todo 使用policyFileName创建PresentationPolicyE，请确保您的classPath中有JSON文件。
+     *
      * create the PresentationPolicyE with policyFileName, 
      * please make sure the JSON file in your classPath.
      * 
@@ -119,6 +137,9 @@ public class PresentationPolicyE extends Version implements JsonSerializer {
     }
     
     /**
+     *
+     * TODO 根据 JSON String 创建  画像策略
+     *
      * create the PresentationPolicyE with JSON String.
      * 
      * @param json the JSON String
@@ -131,6 +152,8 @@ public class PresentationPolicyE extends Version implements JsonSerializer {
             HashMap<String, Object> policyMap = 
                 DataToolUtils.deserialize(json, HashMap.class);
             //获取policyJson中的policy 转换成Map
+            //
+            // 提取 当前 policy 中指定的 cpt 集
             HashMap<Integer, Object> claimMap = 
                 (HashMap<Integer, Object>)policyMap.get(CredentialConstant.CLAIM_POLICY_FIELD);
             //遍历claimMap
@@ -139,10 +162,13 @@ public class PresentationPolicyE extends Version implements JsonSerializer {
                 //得到每一个claim
                 HashMap<String, Object> claim = (HashMap<String, Object>)claimMap.get(it.next());
                 //得到fieldsToBeDisclosed转换成Map
+                //
+                // 提取每个 claim中的 披露字段
                 HashMap<String, Object> disclosedMap = 
                     (HashMap<String, Object>)claim.get(
                         CredentialConstant.CLAIM_POLICY_DISCLOSED_FIELD
                     );
+
                 //覆盖原来的fieldsToBeDisclosed为字符串
                 claim.put(
                     CredentialConstant.CLAIM_POLICY_DISCLOSED_FIELD,

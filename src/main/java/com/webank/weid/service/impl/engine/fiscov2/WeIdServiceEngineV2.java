@@ -411,12 +411,15 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
         int latestBlockNumber = 0;
         try {
             String identityAddr = WeIdUtils.convertWeIdToAddress(weId);
+
+            // todo 合约中查 该 WeId 最后一次 更新 属性的 blockNumber
             latestBlockNumber = weIdContract
                 .getLatestRelatedBlock(identityAddr).send().intValue();
             if (0 == latestBlockNumber) {
                 return new ResponseData<>(null, ErrorCode.WEID_DOES_NOT_EXIST);
             }
 
+            // 处理回执, 提取出 Document 信息
             resolveTransaction(weId, latestBlockNumber, result);
             return new ResponseData<WeIdDocument>(result, ErrorCode.SUCCESS);
         } catch (InterruptedException | ExecutionException e) {

@@ -23,6 +23,7 @@ import com.github.reinert.jjschema.Attributes;
 import lombok.Data;
 
 /**
+ * todo 用户请求发行者签署凭证。
  * User request issuer to sign credential.
  *
  * @author tonychen
@@ -34,7 +35,7 @@ public class Cpt111 {
     @Attributes(required = true, description = "CPT ID")
     private String cptId;
     @Attributes(required = true, description = "credential Signature Request", minimum = 1)
-    private String credentialSignatureRequest;
+    private String credentialSignatureRequest;  // todo 这是一个 签名
     @Attributes(required = true, description = "User Nonce")
-    private String userNonce;
+    private String userNonce;  // 一个随机数
 }

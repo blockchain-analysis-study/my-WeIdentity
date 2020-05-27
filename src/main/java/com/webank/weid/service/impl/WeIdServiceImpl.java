@@ -161,6 +161,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
     }
 
     /**
+     * todo 查询Document详情  struct
      * Get a WeIdentity DID Document.
      *
      * @param weId the WeIdentity DID
@@ -173,6 +174,8 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
             logger.error("Input weId : {} is invalid.", weId);
             return new ResponseData<>(null, ErrorCode.WEID_INVALID);
         }
+
+        // todo 去 chain 查询 Document 信息
         ResponseData<WeIdDocument> weIdDocResp = weIdServiceEngine.getWeIdDocument(weId);
         if (weIdDocResp.getErrorCode() != ErrorCode.SUCCESS.getCode()) {
             return weIdDocResp;
@@ -205,6 +208,8 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
     }
 
     /**
+     *
+     * todo 查询Document详情  jsonStr
      * Get a WeIdentity DID Document Json.
      *
      * @param weId the WeIdentity DID

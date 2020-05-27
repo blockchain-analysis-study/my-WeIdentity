@@ -32,6 +32,8 @@ import com.webank.weid.protocol.inf.JsonSerializer;
 import com.webank.weid.util.DataToolUtils;
 
 /**
+ *
+ * todo 处理WeIdentity DID Document的基本数据结构。
  * The base data structure to handle WeIdentity DID Document info.
  *
  * @author tonychen 2018.9.29
@@ -62,16 +64,19 @@ public class WeIdDocument implements JsonSerializer {
     private Long updated;
 
     /**
+     * todo 数组 绑定的公钥集
      * Required: The public key list.
      */
     private List<PublicKeyProperty> publicKey = new ArrayList<>();
 
     /**
+     * todo 数组 绑定的  认证方式集
      * Required: The authentication list.
      */
     private List<AuthenticationProperty> authentication = new ArrayList<>();
 
     /**
+     * todo 数组 绑定的 Service集
      * Required: The service list.
      */
     private List<ServiceProperty> service = new ArrayList<>();

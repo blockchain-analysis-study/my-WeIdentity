@@ -42,6 +42,7 @@ import com.webank.weid.util.DataToolUtils;
 
 
 /**
+ * todo 处理Credential信息的基本数据结构
  * The base data structure to handle Credential info.
  *
  * @author junqizhang 2019.04

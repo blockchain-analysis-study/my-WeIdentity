@@ -33,6 +33,12 @@ import com.webank.weid.protocol.inf.RawSerializer;
 import com.webank.weid.util.DataToolUtils;
 
 /**
+ * todo 挑战实例
+ *
+ * Challenge，简单的来说，是用来在机构间使用AMOP通信的时候，
+ * 通信的双方需要进行authentication (认证方式)。
+ * 这里需要用到Challenge（密码学中的挑战一个概念）
+ *
  * Created by Junqi Zhang on 2019/4/9.
  */
 @Getter
@@ -47,6 +53,7 @@ public class Challenge extends Version implements RawSerializer {
     private static final long serialVersionUID = 3783172794625195471L;
 
     /**
+     * todo 指定您要挑战的人的 WeId
      * Specify who you want to challenge.
      */
     private String weId;
@@ -58,14 +65,23 @@ public class Challenge extends Version implements RawSerializer {
      * is also known as dynamic challenge.
      *
      */
+    /**
+     * todo 指定一个随机的字母数字随机数 nonce，
+     *      WeIdentity DID所有者将签署一个credential，
+     *      其中包括随机数 nonce 以证明此 WeIdentity DID的所有权。
+     *      依赖方应在挑战中包含随机字母数字（即随机数）nonce，以防止重播攻击。
+     *      [这也称为动态挑战]。
+     */
     private String nonce;
 
     /**
+     *
+     * 工厂功能可帮助创建全新的挑战对象。
      * Factory function which can help to create a brand new challenge object.
      *
      * @param userWeId Specify who you want to challenge. Most of the time you need to pass user's
-     *     weId.
-     * @param seed the verify seed
+     *     weId.  指定您要挑战的人。 大多数时候，您需要传递用户的weId。
+     * @param seed the verify seed  用于做校验的 随机数
      * @return Challenge
      */
     public static Challenge create(String userWeId, String seed) {
@@ -77,6 +93,7 @@ public class Challenge extends Version implements RawSerializer {
         random.nextBytes(bytes);
         String nonce = Base64.encodeBase64String(bytes);
 
+        // 组装 挑战信息
         Challenge challenge = new Challenge();
         challenge.setNonce(nonce);
         challenge.setWeId(userWeId);

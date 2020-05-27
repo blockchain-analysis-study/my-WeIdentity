@@ -167,6 +167,8 @@ public class AuthorityIssuerServiceImpl extends AbstractService implements Autho
     }
 
     /**
+     *
+     * 注册一个新的 发行者的 类型
      * Register a new issuer type.
      *
      * @param callerAuth the caller
@@ -174,8 +176,8 @@ public class AuthorityIssuerServiceImpl extends AbstractService implements Autho
      * @return Execution result
      */
     public ResponseData<Boolean> registerIssuerType(
-        WeIdAuthentication callerAuth,
-        String issuerType
+        WeIdAuthentication callerAuth,          // 调用者的  WeId, PriKey, PubKey
+        String issuerType                       // 新的 发行者类型
     ) {
         ErrorCode innerCode = isIssuerTypeValid(issuerType);
         if (innerCode != ErrorCode.SUCCESS) {
@@ -186,6 +188,8 @@ public class AuthorityIssuerServiceImpl extends AbstractService implements Autho
             return new ResponseData<>(false, innerCode);
         }
         try {
+
+            // 注册新的 发行者类型
             return authEngine
                 .registerIssuerType(issuerType, callerAuth.getWeIdPrivateKey().getPrivateKey());
         } catch (Exception e) {

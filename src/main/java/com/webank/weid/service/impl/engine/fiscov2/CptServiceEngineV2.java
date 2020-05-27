@@ -352,6 +352,8 @@ public class CptServiceEngineV2 extends BaseEngine implements CptServiceEngine {
         );
     }
 
+
+    // 根据 cptId 从 chain 上查询回 cpt模板信息
     /* (non-Javadoc)
      * @see com.webank.weid.service.impl.engine.CptEngineController#queryCpt(int)
      */
@@ -359,6 +361,8 @@ public class CptServiceEngineV2 extends BaseEngine implements CptServiceEngine {
     public ResponseData<Cpt> queryCpt(int cptId) {
 
         try {
+
+            // todo  调用 CptController 合约的 queryCpt()
             Tuple7<String, List<BigInteger>, List<byte[]>, List<byte[]>,
                 BigInteger, byte[], byte[]> valueList =
                 cptController
@@ -370,12 +374,17 @@ public class CptServiceEngineV2 extends BaseEngine implements CptServiceEngine {
                 return new ResponseData<>(null, ErrorCode.CPT_NOT_EXISTS);
             }
 
+            // 校验下 该 Cpt模板当时的 发布者的Addr是否为 0地址
             if (WeIdConstant.EMPTY_ADDRESS.equals(valueList.getValue1())) {
                 logger.error("Query cpt id : {} does not exist.", cptId);
                 return new ResponseData<>(null, ErrorCode.CPT_NOT_EXISTS);
             }
+
+            // Cpt 模板结构
             Cpt cpt = new Cpt();
             cpt.setCptId(cptId);
+
+            // 将chain 中提取的数据一一设置到 CPT 实例中
             cpt.setCptPublisher(
                 WeIdUtils.convertAddressToWeId(valueList.getValue1())
             );
@@ -416,6 +425,8 @@ public class CptServiceEngineV2 extends BaseEngine implements CptServiceEngine {
         }
     }
 
+
+    // todo 根据 CPT Id 去chain 上查回, Credential 需要用的 Claim jsonSchame / CredentialTemplate的 Pubkey 和 Proof
     /* (non-Javadoc)
      * @see com.webank.weid.service.impl.engine.CptServiceEngine#queryCredentialTemplate(
      * java.lang.Integer)
@@ -425,6 +436,8 @@ public class CptServiceEngineV2 extends BaseEngine implements CptServiceEngine {
 
         int blockNum = 0;
         try {
+
+            // todo  调用 CptController 合约的 getCredentialTemplateBlock() 方法, 查出该 CptId 最新一次放置 CredentialTemplate的 PubKey 和 Proof 的blockNumber
             blockNum = cptController
                 .getCredentialTemplateBlock(new BigInteger(String.valueOf(cptId))).send()
                 .intValue();
@@ -458,10 +471,13 @@ public class CptServiceEngineV2 extends BaseEngine implements CptServiceEngine {
             return new ResponseData<CredentialTemplateEntity>(null, ErrorCode.BASE_ERROR);
         }
 
+        // 根据该 BlockNumber 解析 回执中存的 PubKey 和 Proof
         List<Transaction> transList = bcosBlock.getBlock().getTransactions().stream()
             .map(transactionResult -> (Transaction) transactionResult.get())
             .collect(Collectors.toList());
 
+
+        // 这里面就是 Schame (这里的Schame 是对应的 CptId 在chain 中的 jsonSchame) 和 PubKey 和 Proof 三个字段
         CredentialTemplateEntity credentialTemplateStorage = new CredentialTemplateEntity();
         try {
             for (Transaction transaction : transList) {
@@ -476,7 +492,10 @@ public class CptServiceEngineV2 extends BaseEngine implements CptServiceEngine {
                     if (StringUtils.equals(log.getTopics().get(0), CREDENTIAL_TEMPLATE_EVENT)) {
                         List<CredentialTemplateEventResponse> event = cptController
                             .getCredentialTemplateEvents(receipt);
+
                         CredentialTemplateEventResponse eventResponse = event.get(0);
+
+                        // 从 对应的 event 中 获取 proof 和 pubKey
                         byte[] proof = eventResponse.credentialProof;
                         byte[] credentialPubKey = eventResponse.credentialPublicKey;
                         credentialTemplateStorage
@@ -489,18 +508,24 @@ public class CptServiceEngineV2 extends BaseEngine implements CptServiceEngine {
                     }
                 }
             }
+
+            // 根据 cptId 从 chain 上查询回 cpt模板信息
             ResponseData<Cpt> resp = this.queryCpt(cptId);
             Cpt cpt = resp.getResult();
 
+            // 开始处理 chain 上的cptJsonSchame
             Map<String, Object> cptInfo = cpt.getCptJsonSchema();
             List<String> attrList;
             attrList = JsonUtil.extractCptProperties(cptInfo);
             Builder builder = AttributeTemplate.newBuilder();
+
+            // todo 逐个遍历 jsonSchame 中的信息
             for (String attr : attrList) {
                 builder.addAttributeKey(attr);
             }
             AttributeTemplate attributes = builder.build();
 
+            // 设置 jsonSchame 信息
             credentialTemplateStorage.setCredentialSchema(attributes);
         } catch (Exception e) {
             logger.error("[queryCredentialTemplate] query credential template has error.", e);

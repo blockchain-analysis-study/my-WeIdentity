@@ -745,23 +745,33 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     }
 
     /**
+     * todo 用户创建 Credential
      * user build credential Info map and makeCredential.
      */
     private static UserResult makeCredential(
-        CredentialPojo preCredential,
-        String claimJson,
-        Integer cptId,
-        WeIdAuthentication weIdAuthentication) {
+        CredentialPojo preCredential,           // 还未完成的Credential信息
+        String claimJson,                       // 该Credential 中的Claim
+        Integer cptId,                          // 对应Claim 的cptId, 主要用来去 chain 上查回 cpt模板对 入参的Claim做校验的
+        WeIdAuthentication weIdAuthentication   // 认证方式
+    ) {
 
+        // 构建出 Credential Map
         Map<String, String> credentialInfoMap = buildCredentialInfo(preCredential, claimJson);
 
+
+        // todo 根据 CPT Id 去chain 上查回, Credential 需要用的 Claim jsonSchame / CredentialTemplate的 Pubkey 和 Proof
         ResponseData<CredentialTemplateEntity> res = getCptService().queryCredentialTemplate(cptId);
         CredentialTemplateEntity credentialTemplate = res.getResult();
 
+
+        // todo 妈的, 这里的细节被封装成 native 方法了 (使用了 动态库, 防止被抄袭 ??)
+        //
+        // todo 发起调用远端的 请求??
         UserResult userResult = UserClient.makeCredential(credentialInfoMap, credentialTemplate);
 
         // masterSecret is saved by User
-        String masterSecret = userResult.masterSecret;
+        // todo 我草, 这里就看不懂了 `masterSecret` 和 `credentialSecretsBlindingFactors` 到底什么东西呢
+        String masterSecret = userResult.masterSecret;  // 私钥? 谁的 私钥啊?
         String credentialSecretsBlindingFactors = userResult.credentialSecretsBlindingFactors;
 
         Map<String, String> userCredentialInfo = new HashMap<>();
@@ -773,6 +783,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         //String id=(String)preCredential.getClaim().get(CredentialConstant.CREDENTIAL_META_KEY_ID);
 
         //save masterSecret and credentialSecretsBlindingFactors to persistence.
+        //
+        // todo 将masterSecret和credentialSecretsBlindingFactors 存入本地DB
         ResponseData<Integer> dbResp = getDataDriver()
             .saveOrUpdate(DataDriverConstant.DOMAIN_USER_MASTER_SECRET, id, json);
         if (dbResp.getErrorCode().intValue() != ErrorCode.SUCCESS.getCode()) {
@@ -785,32 +797,59 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     }
 
     /**
+     *
+     * todo 根据 不完整的Credential (pre-credential) 和 不是最终的Claim 来构建 CredentialMap
      * build credentialInfoMap from pre-credential and claim sent by issuer.
      */
     private static Map<String, String> buildCredentialInfo(CredentialPojo preCredential,
         String claimJson) {
 
+
+        // 将对应的 字段 Copy 过来, 中转变量
+        //
+        // Pojo 是 `Credential信息的基本数据结构`
         CredentialPojo tempCredential = DataToolUtils.clone(preCredential);
+
+        // 将Claim 转成 Map, 这个现在  其实这个 Claim 不是最终的Claim, 这个Claim 中有些字段是 Credential 需要的
+        // todo 在 Pre-Credential 中的 Claim 可能不是最终的 Claim 哦
         Map<String, Object> claim = preCredential.getClaim();
+
+        // todo 这个用来装 最终的 Credential
         Map<String, String> credentialInfo = new HashMap<String, String>();
         Map<String, String> newCredentialInfo = new HashMap<String, String>();
         try {
+
+            // 将 入参的ClaimJson 信息转成 ClaimMap
             Map<String, Object> claimMap = DataToolUtils.deserialize(claimJson, HashMap.class);
+
+            // 将入参的 ClaimJson 的Map信息存入 中转变量的 tempCredential
             tempCredential.setClaim(claimMap);
+
+            // 取出 之前在 Pre-Credential 的 Claim中的 `@content` 的值 (它其实是 该 Credential 需要用的)
             tempCredential.setContext(
                 String.valueOf(claim.get(CredentialConstant.CREDENTIAL_META_KEY_CONTEXT)));
+
+            // 取出 之前在 Pre-Credential 的 Claim中的 `cptId` 的值 (它其实是 该 Credential 需要用的)
             tempCredential
                 .setCptId((Integer) claim.get(CredentialConstant.CREDENTIAL_META_KEY_CPTID));
+
+            // 同上 (失效日期)
             Long newExpirationDate =
                 DateUtils.convertToNoMillisecondTimeStamp(
                     (Long) (claim.get(CredentialConstant.CREDENTIAL_META_KEY_EXPIRATIONDATE)));
             tempCredential.setExpirationDate(newExpirationDate);
+
+            // 同上 (Credential 的Id)
             tempCredential
                 .setId(String.valueOf(claim.get(CredentialConstant.CREDENTIAL_META_KEY_ID)));
+
+            // 同上 (发行日期)
             Long newIssuanceDate =
                 DateUtils.convertToNoMillisecondTimeStamp(
                     (Long) (claim.get(CredentialConstant.CREDENTIAL_META_KEY_ISSUANCEDATE)));
             tempCredential.setIssuanceDate(newIssuanceDate);
+
+            // 同上 (发行人的 WeId)
             tempCredential.setIssuer(
                 String.valueOf(claim.get(CredentialConstant.CREDENTIAL_META_KEY_ISSUER)));
             credentialInfo = JsonUtil.credentialToMonolayer(tempCredential);
@@ -1005,6 +1044,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         return ErrorCode.SUCCESS;
     }
 
+
+    // todo 依赖外部入参 构造 Credential
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.CredentialPojoService#createCredential(
      *          com.webank.weid.protocol.request.CreateCredentialPojoArgs
@@ -1014,6 +1055,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     public ResponseData<CredentialPojo> createCredential(CreateCredentialPojoArgs args) {
 
         try {
+            // 形式化验证
             ErrorCode innerResponseData =
                 CredentialPojoUtils.isCreateCredentialPojoArgsValid(args);
             if (ErrorCode.SUCCESS.getCode() != innerResponseData.getCode()) {
@@ -1021,9 +1063,14 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                     innerResponseData.getCodeDesc());
                 return new ResponseData<>(null, innerResponseData);
             }
+            
+            // Credential信息的基本数据结构
             CredentialPojo result = new CredentialPojo();
+            // 设置Credential 默认的 `@contant` 字段的 URL
             String context = CredentialUtils.getDefaultCredentialContext();
             result.setContext(context);
+
+            // UUID 生成 Credential Id
             if (StringUtils.isBlank(args.getId())) {
                 result.setId(UUID.randomUUID().toString());
             } else {
@@ -1043,6 +1090,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                     result.setIssuanceDate(newIssuanceDate);
                 }
             }
+
+            // 使用 认证方式 中的 PriKey 验证当前 发行者的WeId
             if (!WeIdUtils.validatePrivateKeyWeIdMatches(
                 args.getWeIdAuthentication().getWeIdPrivateKey(),
                 args.getIssuer())) {
@@ -1073,11 +1122,16 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             result.setClaim(claimMap);
 
             String privateKey = args.getWeIdAuthentication().getWeIdPrivateKey().getPrivateKey();
+
+            // todo 如果 类型是 lite1
             if (StringUtils.equals(args.getType().getName(), CredentialType.LITE1.getName())) {
+                // TODO 创建lite1类型的Credential  (主要是 添加 PriKey 的签名)
                 return createLiteCredential(result, privateKey);
             }
 
-            Map<String, Object> saltMap = DataToolUtils.clone(claimMap);
+
+            // todo 否则, ...
+            Map<String, Object> saltMap = DataToolUtils.clone(claimMap); // 算出 salt
             generateSalt(saltMap, null);
             String rawData = CredentialPojoUtils
                 .getCredentialThumbprintWithoutSig(result, saltMap, null);
@@ -1086,6 +1140,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
 
             result.putProofValue(ParamKeyConstant.PROOF_CREATED, result.getIssuanceDate());
 
+            // 提取 认证方式中的 PubKey
             String weIdPublicKeyId = args.getWeIdAuthentication().getWeIdPublicKeyId();
             result.putProofValue(ParamKeyConstant.PROOF_CREATOR, weIdPublicKeyId);
 
@@ -1105,6 +1160,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         }
     }
 
+    // TODO 创建lite1类型的Credential  (主要是 添加 PriKey 的签名)
     private ResponseData<CredentialPojo> createLiteCredential(CredentialPojo credentialPojo,
         String privateKey) {
 
@@ -1990,11 +2046,14 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
      */
     @Override
     public ResponseData<CredentialPojo> prepareZkpCredential(
-        CredentialPojo preCredential,
-        String claimJson,
-        WeIdAuthentication weIdAuthentication) {
+        CredentialPojo preCredential,           // 还未形成 Credential 的一些预热信息
+        String claimJson,                       // 入参的 用来生成 Credential 的Claim 部分 (不是最终的Claim, 里面有些字段需要放到外面的Credential 中)
+        WeIdAuthentication weIdAuthentication   // 认证方式, 该类只有三个字段   WeId/PubKey/PriKey
+    ) {
 
         //1. verify pre-credential.
+        //
+        // 校验 Pre-Credential 信息
         ResponseData<Boolean> verifyResult = this.verify(preCredential.getIssuer(), preCredential);
         if (verifyResult.getErrorCode().intValue() != ErrorCode.SUCCESS.getCode()) {
             logger.error("[prepareZKPCredential] pre-credential verified failed.");
@@ -2003,15 +2062,22 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         }
 
         //2.build credentialInfoMap and make credential.
+        //
+        // 提取出 Pre-Credential 的 Claim 中的 cptId
         Integer cptId = (Integer) preCredential.getClaim()
             .get(CredentialConstant.CREDENTIAL_META_KEY_CPTID);
+
+        // todo 构建 Credential 实例,  这里会和 chain 操作, 也会和远端第三方请求操作
         UserResult userResult = makeCredential(preCredential, claimJson, cptId, weIdAuthentication);
 
         //3. generate credential based on CPT 111 and userResult.
+        //
+        // 根据CPT 111和userResult生成凭据。
         return generateCpt111Credential(weIdAuthentication, cptId, userResult);
     }
 
     /**
+     * todo 根据CPT 111和userResult生成凭据。
      * generate credential based on cpt 111.
      *
      * @param weIdAuthentication auth
@@ -2031,11 +2097,17 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         CreateCredentialPojoArgs args = new CreateCredentialPojoArgs();
         args.setClaim(cpt111);
         args.setWeIdAuthentication(weIdAuthentication);
+
+        // cpt 111 是 零知识证明的 CPT 啊
         args.setCptId(CredentialConstant.ZKP_USER_NONCE_CPT);
         args.setIssuer(weIdAuthentication.getWeId());
         //args.setId(preCredential.getId());
         args.setIssuanceDate(System.currentTimeMillis());
         args.setExpirationDate(System.currentTimeMillis() + 24 * 60 * 60 * 1000);
+
+        // todo  来了来了, 生成真正的 Credential 了
+        //
+        // todo 依赖外部入参 构造 Credential
         return this.createCredential(args);
     }
 

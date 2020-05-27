@@ -22,7 +22,11 @@ package com.webank.weid.protocol.base;
 import lombok.Data;
 
 /**
+ *
+ * todo 处理WeIdentity DID授权信息的基本数据结构。
  * The base data structure to handle WeIdentity DID authority info.
+ *
+ * todo WeIdentity 体系的 WeId认证方式实体
  *
  * @author darwindu
  */
@@ -30,16 +34,21 @@ import lombok.Data;
 public class WeIdAuthentication {
 
     /**
+     * 认证方式
      * Required: The weIdentity DID.
      */
     private String weId;
     
     /**
+     *
+     * 和该 WeId 绑定的 公钥
      * the public key Id.
      */
     private String weIdPublicKeyId;
 
     /**
+     *
+     * 和公钥配套的 私钥
      * Required: The private key or The weIdentity DID.
      */
     private WeIdPrivateKey weIdPrivateKey;

@@ -32,13 +32,13 @@ import lombok.Data;
 public class Cpt110 {
 
     @Attributes(required = true, description = "CPT ID")
-    private Integer cptId;
+    private Integer cptId; // 使用的 cptId (这里就是 110)
 
     /**
      * credential id.
      */
     @Attributes(required = true, description = "credential ID")
-    private String credentialId;
+    private String credentialId; // 当前 Credential 的Id
 
     /**
      * Required: The context field.
@@ -50,17 +50,17 @@ public class Cpt110 {
      * Required: The issuer WeIdentity DID.
      */
     @Attributes(required = true, description = "issuer weid")
-    private String issuer;
+    private String issuer; // 发布者的 WeId
 
     /**
      * Required: The create date.
      */
     @Attributes(required = true, description = "issuanceDate")
-    private Long issuanceDate;
+    private Long issuanceDate;  // 发布日期
 
     /**
      * Required: The expire date.
      */
     @Attributes(required = true, description = "expirationDate")
-    private Long expirationDate;
+    private Long expirationDate; // 过期日期
 }

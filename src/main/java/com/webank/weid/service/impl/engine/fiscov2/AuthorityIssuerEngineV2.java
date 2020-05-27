@@ -421,10 +421,14 @@ public class AuthorityIssuerEngineV2 extends BaseEngine implements AuthorityIssu
     @Override
     public ResponseData<Boolean> registerIssuerType(String issuerType, String privateKey) {
         try {
+
+            // SpecificIssuerController 合约实例
             SpecificIssuerController specificIssuerController = reloadContract(
                 fiscoConfig.getSpecificIssuerAddress(),
                 privateKey,
                 SpecificIssuerController.class);
+
+            // 调用 SpecificIssuerController合约的 registerIssuerType()方法
             TransactionReceipt receipt = specificIssuerController
                 .registerIssuerType(DataToolUtils.stringToByte32Array(issuerType)).send();
 
