@@ -239,6 +239,7 @@ public final class WeIdConstant {
     public static final String CNS_EVIDENCE_ADDRESS = "EvidenceFactory";
     public static final String CNS_CPT_ADDRESS = "CptController";
 
+    // 定义 chain 上的字符串长度
     public static final Integer ON_CHAIN_STRING_LENGTH = 2097152;
 
     public static enum PublicKeyType {

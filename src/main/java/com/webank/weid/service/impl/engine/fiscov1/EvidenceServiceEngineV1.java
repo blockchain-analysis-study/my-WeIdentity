@@ -147,7 +147,7 @@ public class EvidenceServiceEngineV1 extends BaseEngine implements EvidenceServi
             return new ResponseData<>(StringUtils.EMPTY, ErrorCode.CREDENTIAL_EVIDENCE_BASE_ERROR);
         }
     }
-
+    // 为任何现有 Evidence 设置任意额外的属性
     @Override
     public ResponseData<Boolean> addLog(
         String hashValue,
@@ -162,6 +162,8 @@ public class EvidenceServiceEngineV1 extends BaseEngine implements EvidenceServi
                     privateKey,
                     EvidenceContract.class
                 );
+
+            // 调用EvidenceContract合约的setAttribute()方法
             TransactionReceipt receipt =
                 evidenceContractWriter.setAttribute(
                     new Utf8String(hashValue),

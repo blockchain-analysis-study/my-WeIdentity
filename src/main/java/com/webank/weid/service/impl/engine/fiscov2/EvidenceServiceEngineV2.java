@@ -259,12 +259,17 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
                 logList.add(logs.get(i));
                 sigList.add(signatures.get(i));
             }
+
+            // 获取 EvidenceContract 合约实例
             EvidenceContract evidenceContractWriter =
                 reloadContract(
                     fiscoConfig.getEvidenceAddress(),
                     privateKey,
                     EvidenceContract.class
                 );
+
+
+            // 调用 EvidenceContract 合约的 createEvidenceWithExtraKey() 方法
             TransactionReceipt receipt =
                 evidenceContractWriter.createEvidenceWithExtraKey(
                     hashByteList,
@@ -320,6 +325,8 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
             logList.add(log);
             List<BigInteger> timestampList = new ArrayList<>();
             timestampList.add(new BigInteger(String.valueOf(timestamp), 10));
+
+            // 使用 PriKey 算出 账户地址, WeId
             String address = WeIdUtils
                 .convertWeIdToAddress(DataToolUtils.convertPrivateKeyToDefaultWeId(privateKey));
             List<String> signerList = new ArrayList<>();
@@ -331,12 +338,14 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
                     EvidenceContract.class
                 );
             signerList.add(address);
+
+            // 调用 EvidenceContract  合约, createEvidence() 方法, 存入一个 新的 Evidence 信息
             TransactionReceipt receipt =
                 evidenceContractWriter.createEvidence(
                     hashByteList,
                     signerList,
                     sigList,
-                    logList,
+                    logList, // 拓展信息, 可以为 null  “”
                     timestampList
                 ).send();
             TransactionInfo info = new TransactionInfo(receipt);
@@ -346,6 +355,7 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
                 return new ResponseData<>(false, ErrorCode.CREDENTIAL_EVIDENCE_BASE_ERROR, info);
             } else {
                 for (EvidenceAttributeChangedEventResponse event : eventList) {
+                    // 对比下, 签名者 是否正确
                     if (event.signer.toArray()[0].toString().equalsIgnoreCase(address)) {
                         return new ResponseData<>(true, ErrorCode.SUCCESS, info);
                     }
@@ -363,6 +373,8 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
     public ResponseData<String> getHashByCustomKey(String customKey) {
         try {
             String hash = DataToolUtils.convertHashByte32ArrayIntoHashStr(
+
+                    // 调用 EvidenceContract 合约的 getHashByExtraKey() 方法, 使用 用户之前对EvidenceHash 的描述信息, 返回对应的Evidence Hash
                 evidenceContract.getHashByExtraKey(customKey).send());
             if (!StringUtils.isEmpty(hash)) {
                 return new ResponseData<>(hash, ErrorCode.SUCCESS);

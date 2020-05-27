@@ -106,6 +106,15 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
             StringUtils.EMPTY);
     }
 
+
+    /**
+     *  为任何现有 Evidence 设置任意额外的属性
+     *
+     * @param hashValue hash value,  Evidence Hash的值
+     * @param log log entry - can be null or empty  额外信息, 可以为 null ""
+     * @param weIdPrivateKey the signer WeID's private key
+     * @return
+     */
     @Override
     public ResponseData<Boolean> addLogByHash(String hashValue, String log,
         WeIdPrivateKey weIdPrivateKey) {
@@ -121,6 +130,8 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
             return new ResponseData<>(false, ErrorCode.CREDENTIAL_PRIVATE_KEY_NOT_EXISTS);
         }
         Long timestamp = DateUtils.getNoMillisecondTimeStamp();
+
+        // go 为任何现有 Evidence 设置任意额外的属性
         return evidenceServiceEngine.addLog(
             hashValue,
             log,
@@ -129,6 +140,8 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
         );
     }
 
+
+    // todo 根据 客户自定义的 ExtraKey {关键字}  log 等
     @Override
     public ResponseData<Boolean> addLogByCustomKey(String customKey, String log,
         WeIdPrivateKey weIdPrivateKey) {
@@ -139,6 +152,7 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
         if (!isChainStringLengthValid(log)) {
             return new ResponseData<>(false, ErrorCode.ON_CHAIN_STRING_TOO_LONG);
         }
+        // 调用 EvidenceContract 合约的 getHashByExtraKey() 方法, 使用 用户之前对EvidenceHash 的描述信息, 返回对应的Evidence Hash
         ResponseData<String> hashResp = evidenceServiceEngine.getHashByCustomKey(customKey);
         if (StringUtils.isEmpty(hashResp.getResult())) {
             return new ResponseData<>(false, hashResp.getErrorCode(),

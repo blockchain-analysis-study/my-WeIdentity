@@ -96,26 +96,29 @@ public class OffLineBatchTask extends AbstractService {
         List<String> signers = new ArrayList<>();
         List<String> customKeys = new ArrayList<>();
 
+
+        // todo 根据 外部入参, 批量将 Evidence 存入 chain
         for (TransactionArgs transaction : transactionArgs) {
 
             String args = transaction.getArgs();
             String[] argArray = StringUtils.splitByWholeSeparatorPreserveAllTokens(args, ",");
-            hashValues.add(argArray[0]);
-            signatures.add(argArray[1]);
-            logs.add(argArray[2]);
-            timestamp.add(Long.valueOf(argArray[3]));
+            hashValues.add(argArray[0]);                // Evidence Hash
+            signatures.add(argArray[1]);                // signature
+            logs.add(argArray[2]);                      // extra
+            timestamp.add(Long.valueOf(argArray[3]));   // timeStamp
 
+            // todo 根据外部的入参, 决定使用 那个方法将 Evidence 存储 chain
             String method = transaction.getMethod();
             switch (method) {
 
                 case "createEvidence":
-                    customKeys.add(StringUtils.EMPTY);
-                    signers.add(argArray[4]);
+                    customKeys.add(StringUtils.EMPTY);  // 拓展描述信息
+                    signers.add(argArray[4]);           // 签名人 WeId
                     break;
                 case "createEvidenceWithCustomKey":
                     //批量接口
-                    customKeys.add(argArray[4]);
-                    signers.add(argArray[5]);
+                    customKeys.add(argArray[4]);        // 拓展描述信息
+                    signers.add(argArray[5]);           // 签名人 WeId
                     break;
                 default:
                     break;
