@@ -38,6 +38,8 @@ public class AuthenticationProperty {
     private String type = PublicKeyType.SECP256K1.getTypeName();
 
     /**
+     * todo 使用来做 认证的 公钥, 这里的值和 PublicKeyProperty 中的Id字段的值对应,
+     *      格式 `WeId#keys-{index}` 如: did:example:123456789abcdefghi#keys-2
      * Required: The public key.
      */
     private String publicKey;

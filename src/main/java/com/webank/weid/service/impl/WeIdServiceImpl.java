@@ -238,6 +238,8 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
                 ErrorCode.getTypeByErrorCode(responseData.getErrorCode())
             );
         }
+
+        // 往 Document jsonStr 中 插入 @content 的k-v, 因为 Document 结构中并未定义这个东西
         weIdDocument =
             new StringBuffer()
                 .append(weIdDocument)

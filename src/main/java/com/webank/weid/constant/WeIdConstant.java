@@ -29,12 +29,14 @@ import java.math.BigInteger;
 public final class WeIdConstant {
 
     /**
+     * todo 常量WeIdentity DID文档协议版本。 就是 Document 中的 @content 字段
      * The Constant WeIdentity DID Document Protocol Version.
      */
     public static final String WEID_DOC_PROTOCOL_VERSION =
         "\"@context\" : \"https://github.com/WeBankFinTech/WeIdentity/blob/master/context/v1\",";
 
     /**
+     *
      * The Constant GAS_PRICE.
      */
     public static final BigInteger GAS_PRICE = new BigInteger("99999999999");
@@ -50,21 +52,25 @@ public final class WeIdConstant {
     public static final BigInteger INILITIAL_VALUE = new BigInteger("0");
 
     /**
+     * TODO DID前缀
      * The Constant WeIdentity DID String Prefix.
      */
     public static final String WEID_PREFIX = "did:weid:";
 
     /**
+     * TODO 用来存储到chain上的DID的PubKey的前缀
      * The Constant WeIdentity DID Document PublicKey Prefix.
      */
     public static final String WEID_DOC_PUBLICKEY_PREFIX = "/weId/pubkey";
 
     /**
+     * TODO 用来存储到chain上的DID的认证信息的前缀
      * The Constant WeIdentity DID Document Authentication Prefix.
      */
     public static final String WEID_DOC_AUTHENTICATE_PREFIX = "/weId/auth";
 
     /**
+     * TODO 用来存储到chain上的DID的Service的前缀
      * The Constant WeIdentity DID Document Service Prefix.
      */
     public static final String WEID_DOC_SERVICE_PREFIX = "/weId/service";

@@ -30,7 +30,7 @@ import lombok.Data;
 public class PublicKeyProperty {
 
     /**
-     * todo 索引Id
+     * todo 索引Id 格式 `WeId#keys-{index}` 如: did:example:123456789abcdefghi#keys-2
      * Required: The id.
      */
     private String id;

@@ -30,11 +30,13 @@ import lombok.Data;
 public class ServiceProperty {
 
     /**
+     * TODO 服务的类型名称
      * Required: The type.
      */
     private String type;
 
     /**
+     * TODO 服务的URL
      * Required: The service endpoint.
      */
     private String serviceEndpoint;
