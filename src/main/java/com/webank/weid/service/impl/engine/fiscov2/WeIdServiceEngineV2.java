@@ -140,6 +140,8 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
             String key = new String(res.key);
             String value = new String(res.value);
             previousBlock = res.previousBlock.intValue();
+
+            // TODO 来来, 开始根据Logs构建Document拉
             buildupWeIdAttribute(key, value, weId, result);
         }
 
@@ -293,8 +295,12 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
         String event = topicMap.get(topic);
 
         if (StringUtils.isNotBlank(event)) {
+
+            // 判断 event 的 name: WeIdAttributeChanged
             switch (event) {
                 case WeIdConstant.WEID_EVENT_ATTRIBUTE_CHANGE:
+
+                    // 开始处理
                     return resolveAttributeEvent(weId, receipt, result);
                 default:
             }
@@ -304,10 +310,12 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
         return response;
     }
 
+    // 处理回执, 提取出 Document 信息
     private static void resolveTransaction(
         String weId,
         int blockNumber,
-        WeIdDocument result) {
+        WeIdDocument result // todo  需要被 回写 的 Document 对象
+    ) {
 
         int previousBlock = blockNumber;
         while (previousBlock != STOP_RESOLVE_BLOCK_NUMBER) {
@@ -335,6 +343,8 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
                 );
                 return;
             }
+
+            // 遍历所有交易
             List<Transaction> transList =
                 latestBlock
                     .getBlock()
@@ -354,6 +364,7 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
                     TransactionReceipt receipt = rec1.getTransactionReceipt().get();
                     List<Log> logs = rec1.getResult().getLogs();
                     for (Log log : logs) {
+                        // 处理 logs
                         ResolveEventLogResult returnValue =
                             resolveEventLog(weId, log, receipt, result);
                         if (returnValue.getResultStatus().equals(

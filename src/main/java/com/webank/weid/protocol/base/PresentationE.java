@@ -41,6 +41,7 @@ import com.webank.weid.util.WeIdUtils;
 
 
 /**
+ * TODO 对外的 Credential  Presentation
  * Created by Junqi Zhang on 2019/4/4.
  */
 @Data
@@ -61,6 +62,7 @@ public class PresentationE implements RawSerializer, IProof {
 
     private List<String> type = new ArrayList<String>();
 
+    // todo 包含了对外的 CredentialPojo (注意不是 Credential哦)
     private List<CredentialPojo> verifiableCredential;
 
     private Map<String, Object> proof;

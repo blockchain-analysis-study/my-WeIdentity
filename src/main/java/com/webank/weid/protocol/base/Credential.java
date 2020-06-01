@@ -30,6 +30,8 @@ import com.webank.weid.protocol.inf.Hashable;
 import com.webank.weid.util.CredentialUtils;
 
 /**
+ *
+ * TODO Credential的基础信息, 不是对外的 CredentialPojo
  * The base data structure to handle Credential info.
  *
  * @author chaoxinhu 2018.10

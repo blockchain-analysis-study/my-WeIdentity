@@ -331,7 +331,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
                 .append(WeIdConstant.REMOVED_PUBKEY_TAG).append("/")
                 .append(owner)
                 .toString();
-            return weIdServiceEngine.setAttribute(
+            return weIdServiceEngine.setAttribute( // 设置 PubKey
                 weAddress,
                 attributeKey,
                 attrValue,
@@ -401,7 +401,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
 
     /**
      * Set Service.
-     *
+     *  设置 Service 信息
      * @param setServiceArgs the set service args
      * @return the response data
      */
@@ -425,7 +425,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
             setServiceArgs.getUserWeIdPrivateKey().getPrivateKey(),
             weId,
             serviceType,
-            serviceEndpoint,
+            serviceEndpoint, // 这个可以就是个 URL
             false);
 
     }
@@ -501,7 +501,8 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
                     .append(owner)
                     .toString();
                 return weIdServiceEngine
-                    .setAttribute(weAddress,
+                    .setAttribute( // 设置 认证方式
+                            weAddress,
                         WeIdConstant.WEID_DOC_AUTHENTICATE_PREFIX,
                         attrValue,
                         privateKey,
@@ -564,7 +565,8 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
                     .append(owner)
                     .toString();
                 return weIdServiceEngine
-                    .setAttribute(weAddress,
+                    .setAttribute( // 设置认证方式
+                            weAddress,
                         WeIdConstant.WEID_DOC_AUTHENTICATE_PREFIX,
                         attrValue,
                         privateKey,
@@ -763,7 +765,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
                     .toString();
             String attrValue = new StringBuffer().append(pubKey).append("/").append(owner)
                 .toString();
-            return weIdServiceEngine.setAttribute(
+            return weIdServiceEngine.setAttribute( // 设置 PubKey
                 weAddress,
                 attributeKey,
                 attrValue,
@@ -815,6 +817,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
             true);
     }
 
+    // 将 service 信息 调用 WeIdContract 的 setAttribute() 存储链上
     private ResponseData<Boolean> processSetService(
         String privateKey,
         String weId,
@@ -833,8 +836,10 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
                     .append(WeIdConstant.SEPARATOR)
                     .append(serviceType)
                     .toString();
+
+                // 将 service 信息 调用 WeIdContract 的 setAttribute() 存储链上
                 return weIdServiceEngine
-                    .setAttribute(
+                    .setAttribute( // 设置 service信息
                         WeIdUtils.convertWeIdToAddress(weId),
                         attributeKey,
                         serviceEndpoint,

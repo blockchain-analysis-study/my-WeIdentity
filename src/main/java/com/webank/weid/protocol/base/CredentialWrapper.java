@@ -31,17 +31,23 @@ import com.webank.weid.util.CredentialUtils;
 /**
  * Credential response.
  *
+ * todo 对Credential的封装类, 包含了 Credential类 和 披露信息
+ *
  * @author tonychen 2019年1月24日
  */
 @Data
 public class CredentialWrapper implements Hashable {
 
     /**
+     *
+     * TODO 基本的 Credential类, 注意: 不是对外的 CredentialPojo 哦
      * Required: The Credential.
      */
     private Credential credential;
 
     /**
+     *
+     * 披露字段
      * Required: key is the credential field, and value "1" for disclosure to the third party, "0"
      * for no disclosure.
      */

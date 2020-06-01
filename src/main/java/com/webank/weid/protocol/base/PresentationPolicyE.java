@@ -38,7 +38,7 @@ import com.webank.weid.util.DataToolUtils;
 
 /**
  *
- * todo 策略画像
+ * todo 策略表现形式
  *
  * PresentationPolicyE，是Presentation的“政策”。一般来说，
  * 我们在一项具体业务的时候，可能会让用户提交多个类型的凭证Credential，
@@ -66,14 +66,14 @@ public class PresentationPolicyE extends Version implements JsonSerializer {
     private Integer id;
 
     /**
-     * todo 代表谁发布此 画像政策
+     * todo 代表谁发布此 表现形式政策
      * represent who publish this presentation policy.
      */
     private String orgId;
 
     /**
      *
-     * 代表谁(WeId)发布此 画像政策
+     * 代表谁(WeId)发布此 表现形式政策
      * represent who publish this presentation policy.
      */
     private String policyPublisherWeId;
@@ -105,7 +105,7 @@ public class PresentationPolicyE extends Version implements JsonSerializer {
 
     /**
      *
-     * todo 使用policyFileName创建PresentationPolicyE，请确保您的classPath中有JSON文件。
+     * todo 使用policyFileName创建 PresentationPolicyE，请确保您的classPath中有JSON文件。
      *
      * create the PresentationPolicyE with policyFileName, 
      * please make sure the JSON file in your classPath.
@@ -138,7 +138,7 @@ public class PresentationPolicyE extends Version implements JsonSerializer {
     
     /**
      *
-     * TODO 根据 JSON String 创建  画像策略
+     * TODO 根据 JSON String 创建  表现形式策略
      *
      * create the PresentationPolicyE with JSON String.
      * 

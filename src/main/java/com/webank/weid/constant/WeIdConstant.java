@@ -106,6 +106,7 @@ public final class WeIdConstant {
     public static final Integer JSON_SCHEMA_ARRAY_LENGTH = 128;
 
     /**
+     * DID Document 中的 Service数组中的 type字段的key的 长度
      * The Constant WeIdentity DID Fixed Length for Bytes32.
      */
     public static final Integer BYTES32_FIXED_LENGTH = 32;

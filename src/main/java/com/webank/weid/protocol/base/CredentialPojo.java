@@ -43,6 +43,7 @@ import com.webank.weid.util.DataToolUtils;
 
 /**
  * todo 处理Credential信息的基本数据结构
+ * TODO 对外的 Credential 类型, 组成 Presentation 的一部分
  * The base data structure to handle Credential info.
  *
  * @author junqizhang 2019.04
@@ -58,6 +59,7 @@ public class CredentialPojo implements IProof, JsonSerializer, Hashable {
     private static final long serialVersionUID = 8197843857223846978L;
 
     /**
+     * todo Credential的 @content 字段
      * Required: The context field.
      */
     private String context;
@@ -80,12 +82,12 @@ public class CredentialPojo implements IProof, JsonSerializer, Hashable {
     /**
      * Required: The create date.
      */
-    private Long issuanceDate;
+    private Long issuanceDate;  // 注意是存放时间戳
 
     /**
      * Required: The expire date.
      */
-    private Long expirationDate;
+    private Long expirationDate; // 注意是存放时间戳
 
     /**
      * Required: The claim data.
