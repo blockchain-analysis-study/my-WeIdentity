@@ -56,7 +56,15 @@ public class DataBucketServiceEngineV2 extends BaseEngine implements DataBucketS
     private DataBucket getDataBucket(String privateKey) {
         return super.reloadContract(super.getBucketAddress(), privateKey, DataBucket.class);
     }
-    
+
+    /**
+     * 以admin身份根据hash存放合约地址数据
+     * @param hash 根据合约地址出来的hash值，全局唯一
+     * @param key 存放数据的key
+     * @param value key对应的具体数据
+     * @param privateKey 存放数据的私钥信息
+     * @return
+     */
     @Override
     public ResponseData<Boolean> put(
         String hash, 
@@ -66,6 +74,7 @@ public class DataBucketServiceEngineV2 extends BaseEngine implements DataBucketS
         
         Bytes32 keyByte32 = DataToolUtils.bytesArrayToBytes32(key.getBytes());
         try {
+            // todo 调用 Bucket 合约的put()
             TransactionReceipt receipt = getDataBucket(privateKey.getPrivateKey()).put(
                 hash, keyByte32.getValue(), value).send();
             if (StringUtils

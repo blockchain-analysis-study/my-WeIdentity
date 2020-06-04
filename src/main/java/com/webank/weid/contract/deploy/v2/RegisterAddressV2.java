@@ -53,9 +53,12 @@ public class RegisterAddressV2 extends AddressProcess {
      */
     public static void registerAddress(WeIdPrivateKey privateKey) {
         //先進行cns注冊
-        registerBucketToCns();
+        registerBucketToCns(); // 注册全局bucket合约地址
         //获取地址hash
+        // todo 读出之前 部署合约时存储在本地文件的 所有合约地址
         ContractConfig contractConfig = getContractConfig();
+
+        // 算出所有地址拼接后的Hash值
         String hash = getHashByAddress(contractConfig);
         logger.info("[registerAddress] contract hash = {}.", hash);
         registerAddress(
@@ -96,7 +99,7 @@ public class RegisterAddressV2 extends AddressProcess {
     }
     
     /**
-     * 根据hash，合约地址，key进行地址注册到cns中.
+     * 根据hash，合约地址，key进行地址注册到 cns 中.
      * @param hash 合约地址的hash值
      * @param address 合约地址
      * @param key 合约地址的key
@@ -113,6 +116,8 @@ public class RegisterAddressV2 extends AddressProcess {
             logger.error("[registerAddress] can not find the address.");
             throw new WeIdBaseException("register address fail.");
         }
+
+        // todo  调用 Bucket 合约的 put 方法
         ResponseData<Boolean> result = getBucket().put(hash, key, address, privateKey);
         if (!result.getResult()) {
             logger.error("[registerAddress] register address fail, please check the log.");
@@ -161,7 +166,8 @@ public class RegisterAddressV2 extends AddressProcess {
             new StaticGasProvider(WeIdConstant.GAS_PRICE, WeIdConstant.GAS_LIMIT)).send();
         return dataBucket.getContractAddress();
     }
-    
+
+    // 读出之前 部署合约时存储在本地文件的 所有合约地址
     private static ContractConfig getContractConfig() {
         ContractConfig contractConfig = new ContractConfig();
         String weIdAddress = getAddress("weIdContract.address");

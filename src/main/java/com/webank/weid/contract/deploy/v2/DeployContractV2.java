@@ -76,6 +76,8 @@ public class DeployContractV2 extends AddressProcess {
     private static Web3j web3j;
 
     /**
+     * 根据 输入的私钥, 生成公私钥对 ??
+     *
      * Inits the credentials.
      *
      * @return true, if successful
@@ -93,8 +95,12 @@ public class DeployContractV2 extends AddressProcess {
             logger.error("[DeployContractV2] credentials init failed. ");
             return false;
         }
+
+        // 关于 Credential 的公私钥对 ?? todo 干嘛的?
         String privateKey = credentials.getEcKeyPair().getPrivateKey().toString();
         String publicKey = credentials.getEcKeyPair().getPublicKey().toString();
+
+        // 公私钥对 刷入本地文件
         writeAddressToFile(publicKey, "ecdsa_key.pub");
         writeAddressToFile(privateKey, "ecdsa_key");
         return true;
@@ -110,31 +116,50 @@ public class DeployContractV2 extends AddressProcess {
     }
 
     /**
+     *
+     * todo 往 FISCO BCOS 2.0 部署合约
      * depoly contract on FISCO BCOS 2.0.
      * @param privateKey the private key
      */
     public static void deployContract(String privateKey) {
+        // 初始化 Web3J
         initWeb3j();
+
+        // todo 初始化 Credential 需要的 公私钥对??
         initCredentials(privateKey);
+
+        // 部署 WeId 合约
         String weIdContractAddress = deployWeIdContract();
+
+        // 部署 角色控制 合约
         String roleControllerAddress = deployRoleControllerContracts();
+
+        // 部署 发行人 相关合约
         Map<String, String> addrList = deployIssuerContracts(roleControllerAddress);
         if (addrList.containsKey("AuthorityIssuerData")) {
             String authorityIssuerDataAddress = addrList.get("AuthorityIssuerData");
+
+            // 根据 权威发行人 数据合约地址, 部署CPT 相关合约
             deployCptContracts(
                 authorityIssuerDataAddress,
                 weIdContractAddress,
                 roleControllerAddress
             );
         }
+
+        // 部署 Evidence 合约
         deployEvidenceContractsNew();
+
+        // todo 根据私钥将合约地址注册到cns中
         registerToCns();
     }
-    
+
+    // 根据私钥将合约地址注册到cns中
     private static void registerToCns() {
         String privateKey = AddressProcess.getAddressFromFile("ecdsa_key");
         WeIdPrivateKey weIdPrivate = new WeIdPrivateKey();
         weIdPrivate.setPrivateKey(privateKey);
+        // Do it ...
         RegisterAddressV2.registerAddress(weIdPrivate);
     }
     
@@ -158,6 +183,10 @@ public class DeployContractV2 extends AddressProcess {
         }
     }
 
+    /**
+     * TODO 部署 WeId 合约
+     * @return
+     */
     private static String deployWeIdContract() {
         if (web3j == null) {
             initWeb3j();
@@ -190,6 +219,7 @@ public class DeployContractV2 extends AddressProcess {
         }
 
         try {
+            // 部署 CPT 数据合约
             CptData cptData =
                 CptData.deploy(
                     web3j,
@@ -198,6 +228,7 @@ public class DeployContractV2 extends AddressProcess {
                     authorityIssuerDataAddress).send();
             String cptDataAddress = cptData.getContractAddress();
 
+            // 部署 CPT控制合约
             CptController cptController =
                 CptController.deploy(
                     web3j,
@@ -221,6 +252,7 @@ public class DeployContractV2 extends AddressProcess {
         return StringUtils.EMPTY;
     }
 
+    // 部署 发行人相关合约
     private static Map<String, String> deployIssuerContracts(String roleControllerAddress) {
         if (web3j == null) {
             initWeb3j();
@@ -229,6 +261,7 @@ public class DeployContractV2 extends AddressProcess {
 
         String committeeMemberDataAddress;
         try {
+            // 部署 委员会数据 合约
             CommitteeMemberData committeeMemberData = CommitteeMemberData.deploy(
                 web3j,
                 credentials,
@@ -245,6 +278,8 @@ public class DeployContractV2 extends AddressProcess {
 
         String committeeMemberControllerAddress;
         try {
+
+            // 部署 委员会控制 合约
             CommitteeMemberController committeeMemberController = CommitteeMemberController.deploy(
                 web3j,
                 credentials,
@@ -264,6 +299,8 @@ public class DeployContractV2 extends AddressProcess {
 
         String authorityIssuerDataAddress;
         try {
+
+            // 部署 权威发行人数据 合约
             AuthorityIssuerData authorityIssuerData = AuthorityIssuerData.deploy(
                 web3j,
                 credentials,
@@ -281,6 +318,8 @@ public class DeployContractV2 extends AddressProcess {
 
         String authorityIssuerControllerAddress;
         try {
+
+            // 部署 权威发行人控制 合约
             AuthorityIssuerController authorityIssuerController = AuthorityIssuerController.deploy(
                 web3j,
                 credentials,
@@ -298,6 +337,7 @@ public class DeployContractV2 extends AddressProcess {
         }
 
         try {
+            // 将当前 权威发行人控制合约 地址刷入本地文件
             writeAddressToFile(authorityIssuerControllerAddress, "authorityIssuer.address");
         } catch (Exception e) {
             logger.error("Write error:", e);
@@ -305,6 +345,8 @@ public class DeployContractV2 extends AddressProcess {
 
         String specificIssuerDataAddress = StringUtils.EMPTY;
         try {
+
+            // 部署 发行人描述信息数据 合约
             SpecificIssuerData specificIssuerData = SpecificIssuerData.deploy(
                 web3j,
                 credentials,
@@ -319,6 +361,7 @@ public class DeployContractV2 extends AddressProcess {
         }
 
         try {
+            // 部署 发行人描述信息控制 合约
             SpecificIssuerController specificIssuerController = SpecificIssuerController.deploy(
                 web3j,
                 credentials,
@@ -369,6 +412,7 @@ public class DeployContractV2 extends AddressProcess {
             initWeb3j();
         }
         try {
+            // 部署 Evidence 合约
             EvidenceContract evidenceContract =
                 EvidenceContract.deploy(
                     web3j,
