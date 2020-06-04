@@ -85,6 +85,7 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
     }
 
     /**
+     * todo 在链上创建一个 新的 Evidence
      * Create a new evidence to the blockchain and get the evidence address.
      *
      * @param object the given Java object
@@ -93,6 +94,9 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
      */
     @Override
     public ResponseData<String> createEvidence(Hashable object, WeIdPrivateKey weIdPrivateKey) {
+
+        // todo Hashable 分别被 Credential 和 CredentialPojo 和 CredentialWrapper 和 HashString  四个实现
+        // 先获取 obj 的Hash
         ResponseData<String> hashResp = getHashValue(object);
         if (StringUtils.isEmpty(hashResp.getResult())) {
             return new ResponseData<>(StringUtils.EMPTY, hashResp.getErrorCode(),
@@ -102,6 +106,8 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
             return new ResponseData<>(StringUtils.EMPTY,
                 ErrorCode.CREDENTIAL_PRIVATE_KEY_NOT_EXISTS);
         }
+
+        // 使用 私钥对 Hash 进行签名
         return hashToNewEvidence(hashResp.getResult(), weIdPrivateKey.getPrivateKey(),
             StringUtils.EMPTY);
     }
@@ -233,6 +239,7 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
     }
 
     /**
+     * 上传 Evidence Hash 到区块链的实际方法，在不同的区块链版本中有所不同。
      * Actual method to upload to blockchain, varied in different blockchain versions.
      *
      * @param hashValue the hash value to be uploaded
@@ -242,6 +249,7 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
     private ResponseData<String> hashToNewEvidence(String hashValue, String privateKey,
         String extra) {
         try {
+            // 私钥对 Evidence Hash 的签名
             Sign.SignatureData sigData =
                 DataToolUtils.signMessage(hashValue, privateKey);
             String signature = new String(
@@ -275,6 +283,7 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
                 }
             }
 
+            // 往 链上创建 Evidence
             return evidenceServiceEngine.createEvidence(
                 hashValue,
                 signature,

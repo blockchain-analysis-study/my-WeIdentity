@@ -166,7 +166,7 @@ public class EvidenceServiceEngineV1 extends BaseEngine implements EvidenceServi
             // 调用EvidenceContract合约的setAttribute()方法
             TransactionReceipt receipt =
                 evidenceContractWriter.setAttribute(
-                    new Utf8String(hashValue),
+                    new Utf8String(hashValue),      // 有上面的代码可知, List中只有一个元素
                     new Utf8String("extra"),
                     new Utf8String(log),
                     new Uint256(new BigInteger(String.valueOf(timestamp), 10))

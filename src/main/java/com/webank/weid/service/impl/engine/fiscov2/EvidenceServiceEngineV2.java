@@ -88,6 +88,7 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
             EvidenceContract.class);
     }
 
+    // 往 链上创建 Evidence
     @Override
     public ResponseData<String> createEvidence(
         String hashValue,
@@ -118,9 +119,11 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
                     privateKey,
                     EvidenceContract.class
                 );
+
+            // 调用 EvidenceContract 合约 往链上存储 Evidence
             TransactionReceipt receipt =
                 evidenceContractWriter.createEvidence(
-                    hashByteList,
+                    hashByteList,   // 我们从上面的代码中可以知道,  List 中目前只有一个 元素
                     signerList,
                     sigList,
                     logList,
