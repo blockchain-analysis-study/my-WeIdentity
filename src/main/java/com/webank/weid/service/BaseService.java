@@ -236,6 +236,8 @@ public abstract class BaseService {
         amopCommonArgs.setMessageId(getSeq());
         logger.info("direct route request, seq : {}, body ：{}", amopCommonArgs.getMessageId(),
             requestBodyStr);
+
+        // todo 发起一个 AMOP 请求
         AmopResponse response = weServer.sendChannelMessage(amopCommonArgs, timeOut);
         logger.info("direct route response, seq : {}, errorCode : {}, errorMsg : {}, body : {}",
             response.getMessageId(),

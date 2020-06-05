@@ -73,21 +73,22 @@ public class PresentationPolicyE extends Version implements JsonSerializer {
 
     /**
      *
-     * 代表谁(WeId)发布此 表现形式政策
+     * todo 代表谁(WeId)发布此 表现形式政策
      * represent who publish this presentation policy.
      */
     private String policyPublisherWeId;
 
     /**
      *
-     * 指定需要哪些属性的credential
+     * todo 指定需要哪些属性的credential
+     *  (cptId => ClaimPolicy <这是一个 jsonStr>) 定义了 选择性披露的 policy
      * specify which properties in which credential are needed.
      */
     private Map<Integer, ClaimPolicy> policy;
 
     /**
      *
-     * 策略演示者可以使用的其他数据存储一些特定的业务数据。
+     * todo 策略演示者可以使用的其他数据存储一些特定的业务数据。
      * extra data which policy presenter can use it store some specific business data.
      */
     private Map<String, String> extra;

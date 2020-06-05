@@ -213,6 +213,7 @@ public class PresentationE implements RawSerializer, IProof {
     public String toRawData() {
         PresentationE presentation = DataToolUtils.clone(this);
         presentation.proof = null;
+        // 将 presentation的各个字段进行 序列化
         return DataToolUtils.serialize(presentation);
     }
 }

@@ -54,6 +54,8 @@ public class Challenge extends Version implements RawSerializer {
 
     /**
      * todo 指定您要挑战的人的 WeId
+     *      一般是  credential 验证方 对 credential 持有人发起 挑战,
+     *      所以 这里的 WeId 是 持有人的 WeId
      * Specify who you want to challenge.
      */
     private String weId;
@@ -71,6 +73,8 @@ public class Challenge extends Version implements RawSerializer {
      *      其中包括随机数 nonce 以证明此 WeIdentity DID的所有权。
      *      依赖方应在挑战中包含随机字母数字（即随机数）nonce，以防止重播攻击。
      *      [这也称为动态挑战]。
+     *
+     * todo 这个 挑战的值是 credential 验证方 给的, 由 持有人使用它进行 sign
      */
     private String nonce;
 

@@ -384,6 +384,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         return true;
     }
 
+
+    // todo  对非选择性披露的 Claim 字段的值 做加salt算Hash处理
     private static void addSelectSalt(
         Map<String, Object> disclosureMap,
         Map<String, Object> saltMap,
@@ -424,24 +426,26 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
 
             // todo 选择性披露的value 情况三, 类型 单值
             else {
+                // TODO 对 非披露的值做加salt算Hash 处理
                 addHashToClaim(saltMap, claim, disclosureKey, value, saltV, claimV, isZkp);
             }
         }
     }
 
-    // 给
+    // 给 Claim 中非披露的值 做加salt 算Hash 处理
     private static void addHashToClaim(
-        Map<String, Object> saltMap,
-        Map<String, Object> claim,
-        String disclosureKey,
-        Object value,
-        Object saltV,
-        Object claimV,
-        boolean isZkp
+        Map<String, Object> saltMap,    // 用于清空 salt
+        Map<String, Object> claim,      // 用来 回填 算了Hash 之后的Claim
+        String disclosureKey,           // 当前正在处理的 Claim 的某个字段
+        Object value,                   // 当前正在处理的 Claim 的某个字段 在 disclosure中的 value
+        Object saltV,                   // 当前正在处理的 Claim 的某个字段 在 saltMap 中对应的 salt值
+        Object claimV,                  // 当前正在处理的 Claim 的某个字段 在ClaimMap 中对应的 原始值
+        boolean isZkp                   // 是否启用 零知识证明 标识位
     ) {
 
         // 如果是 用 zkp 形式
         if (isZkp) {
+            // todo 这个 处理的对么 ?? 感觉很怪的处理啊 ??
             if ((value instanceof Map) || !(((Integer) value).equals(Integer.parseInt(DISCLOSED))
                 && claim.containsKey(disclosureKey))) {
                 String hash =
@@ -458,15 +462,18 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             // todo 如果 value 是 【非选择性披露】
             if (((Integer) value).equals(Integer.parseInt(NOT_DISCLOSED))
                 && claim.containsKey(disclosureKey)) {
-                // 覆盖掉 salMap 中对应的 saltValue
+                // todo 覆盖掉 salMap 中对应的 saltValue, 也就是说 将 salt 清空掉
+                // todo 设置为 "0"值
                 saltMap.put(disclosureKey, NOT_DISCLOSED);
 
-                // 计算 非披露的值的Hash
+                // TODO 计算 非披露的值的Hash
                 String hash =
                     CredentialPojoUtils.getFieldSaltHash(
                         String.valueOf(claimV),
                         String.valueOf(saltV)
                     );
+
+                // 将 非披露的值, 放回 Claim 中
                 claim.put(disclosureKey, hash);
             }
         }
@@ -1361,6 +1368,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
 
         // todo 只有 ORIGINAL 类型的 Credential 具备选择性披露
         try {
+
+            // todo 一个 深拷贝
             CredentialPojo credentialClone = DataToolUtils.clone(credential);
             ErrorCode checkResp = CredentialPojoUtils.isCredentialPojoValid(credentialClone);
             if (ErrorCode.SUCCESS.getCode() != checkResp.getCode()) {
@@ -1375,11 +1384,16 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                 return new ResponseData<CredentialPojo>(null,
                     ErrorCode.CREDENTIAL_CLAIM_POLICY_NOT_EXIST);
             }
+            // TODO 逐个检查 saltMap 中的 k-v 中的 value, 如果有value 是 "0" 值的话, 说明已经做过选择性披露了
+            //
+            // TODO 因为做过选择性披露的话, saltMap 中 对应 k-v 的value 会被置为 “0” 值
             if (CredentialPojoUtils.isSelectivelyDisclosed(credential.getSalt())) {
                 return new ResponseData<CredentialPojo>(null, ErrorCode.CREDENTIAL_RE_DISCLOSED);
             }
-            // todo 获取当前 policy 中的 选择性披露的字段
+            // todo 获取当前 policy 中的 选择性披露的字段  jsonStr
             String disclosure = claimPolicy.getFieldsToBeDisclosed();
+
+            // todo  由此可见,  saltMap 也是从外面传进来的
             Map<String, Object> saltMap = credentialClone.getSalt();
             Map<String, Object> claim = credentialClone.getClaim();
 
@@ -1397,10 +1411,19 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             }
             // 补 policy todo  向 disclosureMap 中补充缺失的key
             addKeyToPolicy(disclosureMap, claim);
-            // 加盐处理
+            // 对 claim 中的非披露字段做 加盐算Hash处理
             addSelectSalt(disclosureMap, saltMap, claim, false);
+
+            // 给 Credential 的proof 中的salt 字段设置 (一个 salt Map)
+            // todo  但是这里的 salt Map 中 对应 不需要披露字段的 salt 已经被 清空了
+            // todo  但是, map 是个引用, 所以这里 设置 saltMap 有啥用 ??
+            // todo  如果要设置的话 为啥 claim 不也一起 在设置一编 ?
+            //
+            // todo 是因为 salt 是 proof 中的, 而 proof 本身也是个 Map , 所以 salt 是个 map 中map 的原因么 ??
+            // todo 而 claim 是 Credential 的一个字段么 ??
             credentialClone.setSalt(saltMap);
 
+            //
             ResponseData<CredentialPojo> response = new ResponseData<CredentialPojo>();
             response.setResult(credentialClone);
             response.setErrorCode(ErrorCode.SUCCESS);
@@ -1865,7 +1888,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                 );
                 return new ResponseData<PresentationE>(null, errorCode);
             }
-            // 处理credentialList数据
+            // 处理 credential List数据, 取回精处理后的 具备选择性披露的 Credential 的List, todo 回填到 presentation 中
             errorCode = processCredentialList(credentialList, presentationPolicyE, presentation, // 这个是要 回填的 presentation
                 weIdAuthentication.getWeId());
             if (errorCode.getCode() != ErrorCode.SUCCESS.getCode()) {
@@ -1882,6 +1905,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             // 给 Presentation 实例填充 type 的内容
             presentation.getType().add(WeIdConstant.DEFAULT_PRESENTATION_TYPE);
             // 处理proof数据
+            //
+            // todo challenge 挑战 是在这里用的
             generatePresentationProof(challenge, weIdAuthentication, presentation);
             return new ResponseData<PresentationE>(presentation, ErrorCode.SUCCESS);
         } catch (Exception e) {
@@ -1989,7 +2014,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         // 否则是  ORIGINAL 类型的 Policy
         else {
 
-            // 遍历所有原始证书
+            // todo 遍历所有原始证书
             for (CredentialPojo credential : credentialList) {
                 // 根据原始证书获取对应的 claimPolicy todo (这里头装着 Claim 需要披露的字段名)
                 ClaimPolicy claimPolicy = claimPolicyMap.get(credential.getCptId());
@@ -1998,15 +2023,24 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                 }
                 // 根据原始证书和claimPolicy去创建 选择性披露凭证
                 // todo 生成选择性披露的 Credential
+                //
+                // todo 这里面做的几件事,
+                //          一、对原始的 credential 做了一次 深拷贝出一个 credentialClone
+                //          二、对 credentialClone 中的 非披露字段 做了取了 credentialClone.proof.salt 中的相应的 salt 做了Hash
+                //          三、对 credentialClone中 使用过后的 salt 进行清空
+                // 最后返回 credentialClone
                 ResponseData<CredentialPojo> res =
                     this.createSelectiveCredential(credential, claimPolicy);
                 if (res.getErrorCode().intValue() != ErrorCode.SUCCESS.getCode()) {
                     return ErrorCode.getTypeByErrorCode(res.getErrorCode().intValue());
                 }
+
+                // 收集 credentialClone
                 newCredentialList.add(res.getResult());
             }
         }
 
+        // 给 presentation  设置 新的 Credential List
         presentation.setVerifiableCredential(newCredentialList);
         return ErrorCode.SUCCESS;
     }
@@ -2038,25 +2072,37 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         return newCredentialList;
     }
 
+    // 生成一个Presentation 的Proof
     private void generatePresentationProof(
-        Challenge challenge,
+        Challenge challenge,      // 用来指定需要签名时用的 nonce
         WeIdAuthentication weIdAuthentication,
         PresentationE presentation) {
 
+        // 固定的 Proof 的生成算法, 使用 ECDSA
         String proofType = CredentialProofType.ECDSA.getTypeName();
+        // 给 Presentation 设置 Proof Type (ECDSA)
         presentation.putProofValue(ParamKeyConstant.PROOF_TYPE, proofType);
 
+        // 设置当前生成时间
         Long proofCreated = DateUtils.getNoMillisecondTimeStamp();
         presentation.putProofValue(ParamKeyConstant.PROOF_CREATED, proofCreated);
 
+        // 设置当前 生成 Presentation 的WeId
         String weIdPublicKeyId = weIdAuthentication.getWeIdPublicKeyId();
+        // 设置当前 生成 Presentation 的verificationMethod
         presentation.putProofValue(ParamKeyConstant.PROOF_VERIFICATION_METHOD, weIdPublicKeyId);
+        // 设置当前 生成 Presentation 的nonce todo 使用挑战中给定的 nonce
         presentation.putProofValue(ParamKeyConstant.PROOF_NONCE, challenge.getNonce());
+
+        // 使用 当前 WeId 对应的 私钥对 presentation 的进行 签名
         String signature =
             DataToolUtils.sign(
+                // presentation 序列化之后的 data
                 presentation.toRawData(),
+                // 生成当前 presentation 的 weId 的 privateKey
                 weIdAuthentication.getWeIdPrivateKey().getPrivateKey()
             );
+        // 设置当前 生成 Presentation 的signatureValue
         presentation.putProofValue(ParamKeyConstant.PROOF_SIGNATURE, signature);
     }
 

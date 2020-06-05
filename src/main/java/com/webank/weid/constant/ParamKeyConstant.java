@@ -68,7 +68,7 @@ public final class ParamKeyConstant {
     public static final String POLICY_PACKAGE = "com.webank.weid.cpt.policy.";
 
     /**
-     * todo  Credential 中的 proof 的字段
+     * todo  Credential 和 Presentation 中的 proof 的字段 (VC 和 VP 两者的 Proof 字段基本上一样)
      * proof key.
      */
     public static final String PROOF = "proof";

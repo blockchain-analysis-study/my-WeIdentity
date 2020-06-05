@@ -372,6 +372,8 @@ public final class CredentialPojoUtils {
         if (saltMap == null) {
             return false;
         }
+
+        // 遍历  saltMap
         for (Map.Entry<String, Object> entry : saltMap.entrySet()) {
             Object v = entry.getValue();
             if (v instanceof Map) {

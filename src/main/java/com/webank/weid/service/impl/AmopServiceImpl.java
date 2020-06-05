@@ -94,6 +94,7 @@ public class AmopServiceImpl extends BaseService implements AmopService {
         return dataDriver;
     }
 
+    // todo 向 IV 发起请求一个 Challenge 和 Policy
     @Override
     public ResponseData<PolicyAndChallenge> getPolicyAndChallenge(
         String targetOrgId,
@@ -209,6 +210,8 @@ public class AmopServiceImpl extends BaseService implements AmopService {
     }
 
     // todo 请求发布 Credential
+    //
+    // todo 这个是 用户本地自己生成 Credential 和 presentation, 并将 Credential 提供给 issuer 做 盲签并返回签名后的 Credential 信息
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.AmopService#requestIssueCredential(java.lang.String,
      * com.webank.weid.protocol.amop.RequestIssueCredentialArgs)
@@ -258,6 +261,8 @@ public class AmopServiceImpl extends BaseService implements AmopService {
         }
 
         //2. prepare presentation and send amop request to verify presentation and issue credential
+        //
+        // todo 准备 presentation 并发送 amop请求以 验证 presentation 并 颁发 credential
         CredentialPojo userCredential = userCredentialResp.getResult();
         ResponseData<PresentationE> presentationResp = preparePresentation(args, userCredential);
         int errorCode = presentationResp.getErrorCode();
@@ -270,20 +275,30 @@ public class AmopServiceImpl extends BaseService implements AmopService {
         }
 
         //3. send presentataion to issuer and request issue credential.
+        //
+        // 向发行人发送 presentation 并请求发行 credential
         PresentationE presentation = presentationResp.getResult();
+
+        // todo 3
         ResponseData<RequestIssueCredentialResponse> resp =
             requestIssueCredentialInner(
-                toOrgId,
-                args,
-                userCredential,
-                presentation);
+                toOrgId,          // 接收者 的WeId
+                args,             // args
+                userCredential,   // 颁发好的  credential
+                presentation);    // 组装好的  presentation
 
         //ResponseData<RequestIssueCredentialResponse> resp =
         //Test.test( issueCredentialArgs,  policyAndChallenge);
 
         //4. get credential response and blind signature.
+        //
+        // 获得 credential 响应  和  盲目签名。
         RequestIssueCredentialResponse response = resp.getResult();
+
+        // todo 创建 Credential 签名 并存入 本地DB: mysql
         blindCredentialSignature(response, args.getAuth().getWeId());
+
+        // 返回
         return resp;
     }
 
@@ -319,18 +334,27 @@ public class AmopServiceImpl extends BaseService implements AmopService {
         PresentationE presentation) {
 
         //prepare request args
+
+        // todo 获取出当前 Claim信息
         String claimJson = args.getClaim();
         IssueCredentialArgs issueCredentialArgs = new IssueCredentialArgs();
         issueCredentialArgs.setClaim(claimJson);
+
+        // 获取 policy Id
         String policyId = String.valueOf(
             args.getPolicyAndPreCredential()
                 .getPolicyAndChallenge()
                 .getPresentationPolicyE()
                 .getId());
+
+        // 设置 policy Id
         issueCredentialArgs.setPolicyId(policyId);
+        // 设置 生成好的 presentation
         issueCredentialArgs.setPresentation(presentation);
 
         // AMOP request (issuer to issue credential)
+        //
+        // AMOP请求（颁发证书的发出者）
         ResponseData<RequestIssueCredentialResponse> resp = this.getImpl(
             fiscoConfig.getCurrentOrgId(),
             toOrgId,
@@ -348,12 +372,16 @@ public class AmopServiceImpl extends BaseService implements AmopService {
         CredentialPojo userCredential) {
 
         List<CredentialPojo> credentialList = args.getCredentialList();
+        // 获取 挑战
         PolicyAndPreCredential policyAndPreCredential = args.getPolicyAndPreCredential();
         PolicyAndChallenge policyAndChallenge = policyAndPreCredential.getPolicyAndChallenge();
 
+        // todo 这里只加了一个  Credential 到 List 中
         credentialList.add(userCredential);
 
         //put pre-credential and user-credential(based on CPT 111)
+        // 放置前置凭证和用户凭证（基于CPT 111）
+        // 生成 一个 Presentation
         ResponseData<PresentationE> presentationResp =
             credentialPojoService.createPresentation(
                 credentialList,
@@ -365,10 +393,12 @@ public class AmopServiceImpl extends BaseService implements AmopService {
     }
 
     /**
+     * todo 创建 Credential 签名 并存入 本地DB: mysql
      * blind credential signature.
      */
     private void blindCredentialSignature(RequestIssueCredentialResponse response, String userId) {
 
+        // 从 响应 resp 中获取 credential 实例
         CredentialPojo credentialPojo = response.getCredentialPojo();
         Map<String, String> credentialInfoMap = new HashMap<>();
         Map<String, String> newCredentialInfo = new HashMap<>();
@@ -383,15 +413,20 @@ public class AmopServiceImpl extends BaseService implements AmopService {
         }
 
         Integer cptId = credentialPojo.getCptId();
+        // todo 根据 CPT Id 去chain 上查回, Credential 需要用的 Claim jsonSchame / CredentialTemplate的 Pubkey 和 Proof
         ResponseData<CredentialTemplateEntity> resp1 = cptService.queryCredentialTemplate(cptId);
         CredentialTemplateEntity template = resp1.getResult();
         String id = new StringBuffer().append(userId).append("_").append(cptId)
             .toString();
+
+        // 启动本地 DB: mysql
         ResponseData<String> dbResp = getDataDriver()
             .get(DataDriverConstant.DOMAIN_USER_MASTER_SECRET, id);
         if (dbResp.getErrorCode().intValue() != ErrorCode.SUCCESS.getCode()) {
             throw new DatabaseException("database error!");
         }
+
+        // 查出 userInfo
         String userInfo = dbResp.getResult();
         Map<String, String> userInfoMap = DataToolUtils.deserialize(userInfo, HashMap.class);
         String masterSecret = userInfoMap.get("masterSecret");
@@ -410,6 +445,8 @@ public class AmopServiceImpl extends BaseService implements AmopService {
         //String dbKey = (String) preCredential.getClaim()
         //   .get(CredentialConstant.CREDENTIAL_META_KEY_ID);
         String dbKey = credentialPojo.getId();
+
+        // 将 Credential 签名 存到 本地 DB: mysql
         ResponseData<Integer> dbResponse =
             getDataDriver().saveOrUpdate(
                 DataDriverConstant.DOMAIN_USER_CREDENTIAL_SIGNATURE,

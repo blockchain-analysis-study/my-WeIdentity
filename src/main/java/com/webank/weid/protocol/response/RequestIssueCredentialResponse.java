@@ -25,6 +25,7 @@ import lombok.Setter;
 import com.webank.weid.protocol.base.CredentialPojo;
 
 /**
+ * todo 请求发行人颁发证书的响应
  * response for requesting issuer to issue credential.
  *
  * @author tonychen 2019年12月4日
@@ -37,7 +38,7 @@ public class RequestIssueCredentialResponse {
      * 错误信息.
      */
     protected String errorMessage;
-    private CredentialPojo credentialPojo;
+    private CredentialPojo credentialPojo;  // todo 颁发的 Credential 实例
     private String credentialSignature;
     private String issuerNonce;
     /**
