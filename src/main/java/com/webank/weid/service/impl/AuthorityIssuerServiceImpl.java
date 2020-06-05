@@ -420,6 +420,7 @@ public class AuthorityIssuerServiceImpl extends AbstractService implements Autho
         if (!isValidAuthorityIssuerName(name)) {
             return ErrorCode.AUTHORITY_ISSUER_NAME_ILLEGAL;
         }
+        // todo 问了官方的人, 说是 该发行人所有发行的 Credential 中 素数的乘积 Accumulator 的值 (有凭证撤销的时候, 这个值就会改变)
         String accValue = args.getAccValue();
         try {
             BigInteger accValueBigInteger = new BigInteger(accValue);

@@ -33,16 +33,19 @@ import com.webank.weid.protocol.base.WeIdAuthentication;
 public class CptStringArgs {
 
     /**
+     * 体系的 WeId认证方式实体
      * Required: weId authority  for this CPT.
      */
     private WeIdAuthentication weIdAuthentication;
 
     /**
+     * cpt 的 JsonSchema
      * Required: The json schema content defined for this CPT.
      */
     private String cptJsonSchema;
 
     /**
+     * todo cpt 的 类型, 目前只有 ORIGINAL 和 ZKP,  默认 ORIGINAL
      * cpt type, "ORIGINAL" or "ZKP". default:"ORIGINAL".
      */
     private CptType cptType = CptType.ORIGINAL;

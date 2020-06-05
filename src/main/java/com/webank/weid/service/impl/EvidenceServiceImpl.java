@@ -298,18 +298,23 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
     }
 
     /**
+     * todo 获取 链上的 Evidence 数据
      * Get the evidence from blockchain.
      *
-     * @param evidenceKey the evidence hash on chain
+     * @param evidenceKey the evidence hash on chain  todo 链上的 Evidence Hash
      * @return The EvidenceInfo
      */
     @Override
     public ResponseData<EvidenceInfo> getEvidence(String evidenceKey) {
+
+        // 先校验是否非法
         if (!DataToolUtils.isValidHash(evidenceKey)) {
             logger.error("Evidence argument illegal input: evidence hash. ");
             return new ResponseData<>(null, ErrorCode.ILLEGAL_INPUT);
         }
         try {
+
+            // EvidenceHash  查询 Evidence信息
             return evidenceServiceEngine.getInfo(evidenceKey);
         } catch (Exception e) {
             logger.error("get evidence failed.", e);

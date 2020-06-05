@@ -389,6 +389,8 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
     }
 
     /**
+     *
+     * todo 获取 Evidence 的完整数据
      * Get an evidence full info.
      *
      * @param hash evidence hash
@@ -396,15 +398,21 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
      */
     @Override
     public ResponseData<EvidenceInfo> getInfo(String hash) {
+
+        // new了一个空的 Evidence信息
         EvidenceInfo evidenceInfo = new EvidenceInfo();
         evidenceInfo.setCredentialHash(hash);
         int latestBlockNumber = 0;
         byte[] hashByte = DataToolUtils.convertHashStrIntoHashByte32Array(hash);
         try {
+
+            // 根据 Evidence Hash 先获取 最后一次存放 Evidence 信息的 blockNumber
             latestBlockNumber = evidenceContract.getLatestRelatedBlock(hashByte).send().intValue();
             if (latestBlockNumber == 0) {
                 return new ResponseData<>(null, ErrorCode.CREDENTIAL_EVIDENCE_NOT_EXIST);
             }
+
+            // todo 逐个 处理 Evidence 的信息, 并回填到 evidenceInfo
             resolveTransaction(hash, latestBlockNumber, evidenceInfo);
             // Reverse the order of the list
             for (String signer : evidenceInfo.getSigners()) {
@@ -425,6 +433,7 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
         int startBlockNumber,
         EvidenceInfo evidenceInfo) {
 
+        // 遍历 所有涉及的 block
         int previousBlock = startBlockNumber;
         while (previousBlock != 0) {
             int currentBlockNumber = previousBlock;
@@ -440,6 +449,8 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
                 logger.info("Get block by number:{}. latestBlock is null", currentBlockNumber);
                 return;
             }
+
+            // 获取当前 block 的所有 tx
             List<Transaction> transList = latestBlock
                 .getBlock()
                 .getTransactions()
@@ -448,22 +459,30 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
                 .collect(Collectors.toList());
             previousBlock = 0;
             try {
+
+                // 遍历目标block 的所有 tx
                 for (Transaction transaction : transList) {
                     String transHash = transaction.getHash();
 
+                    // 获取当前 tx 的 所有receipt
                     BcosTransactionReceipt rec1 = ((Web3j) getWeb3j())
                         .getTransactionReceipt(transHash)
                         .send();
                     TransactionReceipt receipt = rec1.getTransactionReceipt().get();
                     List<Log> logs = rec1.getResult().getLogs();
                     // A same topic will be calculated only once
+                    // 同一主题仅计算一次  (去重)
                     Set<String> topicSet = new HashSet<>();
+
+                    // 遍历当前 txReceipt 的所有 logs
                     for (Log log : logs) {
                         if (topicSet.contains(log.getTopics().get(0))) {
                             continue;
                         } else {
                             topicSet.add(log.getTopics().get(0));
                         }
+
+                        // todo  开始处理当前 log, 将信息 回写 到 evidenceInfo
                         ResolveEventLogResult returnValue =
                             resolveEventLog(hash, log, receipt, evidenceInfo);
                         if (returnValue.getResultStatus().equals(
@@ -488,6 +507,7 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
         EvidenceInfo evidenceInfo) {
         String topic = log.getTopics().get(0);
         if (!StringUtils.isBlank(topic)) {
+            // 来, 处理 log 中的 evidence 信息, 回写到 evidenceInfo 中
             return resolveAttributeEvent(hash, receipt, evidenceInfo);
         }
         ResolveEventLogResult response = new ResolveEventLogResult();
@@ -499,6 +519,8 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
         String hash,
         TransactionReceipt receipt,
         EvidenceInfo evidenceInfo) {
+
+        // 根据当前 receipt 获取所有的 events
         List<EvidenceAttributeChangedEventResponse> eventList =
             evidenceContract.getEvidenceAttributeChangedEvents(receipt);
         ResolveEventLogResult response = new ResolveEventLogResult();
@@ -510,15 +532,24 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
         int previousBlock = 0;
         // Actual construction code
         // there should be only 1 attrib-change event so it is fine to do so
+        //
+        // 实际施工规范
+        // 应该只有1个attrib-change事件，所以这样做很好
+        //
+        // 遍历所有 event
         for (EvidenceAttributeChangedEventResponse event : eventList) {
             if (CollectionUtils.isEmpty(event.signer) || CollectionUtils.isEmpty(event.hash)) {
                 response.setResolveEventLogStatus(ResolveEventLogStatus.STATUS_RES_NULL);
                 return response;
             }
             // the event is a full list of everything. Go thru the list and locate the hash
+            //
+            // 遍历 Hash 数组, signer 数组, logs数组
             for (int index = 0; index < CollectionUtils.size(event.hash); index++) {
                 if (hash.equalsIgnoreCase(DataToolUtils.convertHashByte32ArrayIntoHashStr(
                     ((Bytes32) event.hash.toArray()[index]).getValue()))) {
+
+                    // 提取出对应 index 下的单个 signer的 WeId
                     String signerWeId = WeIdUtils
                         .convertAddressToWeId(event.signer.toArray()[index].toString());
                     String currentLog = event.logs.toArray()[index].toString();
@@ -551,12 +582,15 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
                             // sig will override, timestamp will use existing one (always newer)
                             tempInfo.setSignature(
                                 evidenceInfo.getSignInfo().get(signerWeId).getSignature());
+
                             tempInfo.setTimestamp(
                                 evidenceInfo.getSignInfo().get(signerWeId).getTimestamp());
+
                             List<String> oldLogs = evidenceInfo.getSignInfo().get(signerWeId)
                                 .getLogs();
                             oldLogs.add(currentLog);
                             tempInfo.setLogs(oldLogs);
+
                         } else {
                             // haven't constructed anything yet, so create a new one now
                             tempInfo.setSignature(StringUtils.EMPTY);
@@ -566,6 +600,11 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
                                         .longValue()));
                             tempInfo.getLogs().add(currentLog);
                         }
+
+                        // 将 对应的 Signature 信息 和对应的 signer 的WeId 存入 Evidence 的 signInfo Map中
+                        // todo 由此可见这中间可以是多个 signer => signature
+                        //
+                        // 这里存的是 空签名
                         evidenceInfo.getSignInfo().put(signerWeId, tempInfo);
                     } else if (!StringUtils.isEmpty(currentSig)) {
                         // this is a pure sig event, just override
@@ -581,11 +620,17 @@ public class EvidenceServiceEngineV2 extends BaseEngine implements EvidenceServi
                                     ((Uint256) event.updated.toArray()[index]).getValue()
                                         .longValue()));
                         }
+                        // 将 对应的 Signature 信息 和对应的 signer 的WeId 存入 Evidence 的 signInfo Map中
+                        // todo 由此可见这中间可以是多个 signer => signature
+                        //
+                        // 这里存的是 真实的签名
                         evidenceInfo.getSignInfo().put(signerWeId, signInfo);
                     } else {
                         // An empty event
                         continue;
                     }
+
+                    // 取出 当前 event 中存储的 上一个blockNumber引用
                     previousBlock = ((Uint256) event.previousBlock.toArray()[index]).getValue()
                         .intValue();
                 }

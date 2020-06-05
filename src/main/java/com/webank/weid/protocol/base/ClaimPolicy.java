@@ -29,5 +29,8 @@ import lombok.Data;
 @Data
 public class ClaimPolicy {
 
+    // 一系列当前 Claim 中需要被披露的字段名
+    //
+    // jsonStr 格式
     private String fieldsToBeDisclosed;
 }

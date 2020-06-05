@@ -210,6 +210,7 @@ public class CredentialPojo implements IProof, JsonSerializer, Hashable {
     }
 
     /**
+     * todo salt 是对应着 每个不需要披露的 Claim 的字段单独算的,所以需要一个Map (Claim FialdName => Salt)
      * put the salt into proof.
      *
      * @param salt map of salt

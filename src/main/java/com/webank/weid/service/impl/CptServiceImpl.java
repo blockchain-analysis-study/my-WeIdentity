@@ -59,6 +59,8 @@ public class CptServiceImpl extends AbstractService implements CptService {
         CacheManager.registerCacheNode("SYS_CPT", 1000 * 3600 * 24L);
 
     /**
+     * todo 注册一个 CPT 模板到 chain 上
+     * 将具有预设CPT ID的新CPT注册到区块链。
      * Register a new CPT with a pre-set CPT ID, to the blockchain.
      *
      * @param args the args
@@ -100,6 +102,7 @@ public class CptServiceImpl extends AbstractService implements CptService {
                 return new ResponseData<>(null, ErrorCode.ILLEGAL_INPUT);
             }
 
+            // 本次入参只有三部分, auth、jsonSchema、type
             CptMapArgs cptMapArgs = new CptMapArgs();
             cptMapArgs.setWeIdAuthentication(args.getWeIdAuthentication());
             Map<String, Object> cptJsonSchemaMap =

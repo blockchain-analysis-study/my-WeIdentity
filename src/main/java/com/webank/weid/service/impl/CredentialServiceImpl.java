@@ -73,6 +73,8 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
 
 
     /**
+     *
+     * todo 创建一个 Credential 的封装 (CredentialWrapper) 其中包含了 Credential 基础信息 和 disclosure 选择披露信息
      * Generate a credential.
      *
      * @param args the args
@@ -118,6 +120,8 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
                 result.setExpirationDate(newExpirationDate);
             }
             result.setClaim(args.getClaim());
+
+            // 构建 选择性披露信息 disclosure (使用全部的 Claim信息生成 ？？)
             Map<String, Object> disclosureMap = new HashMap<>(args.getClaim());
             for (Map.Entry<String, Object> entry : disclosureMap.entrySet()) {
                 disclosureMap.put(
@@ -128,6 +132,8 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
             credentialWrapper.setDisclosure(disclosureMap);
 
             // Construct Credential Proof
+            //
+            // todo  生成 Credential 的 Proof
             Map<String, String> credentialProof = CredentialUtils.buildCredentialProof(
                 result,
                 args.getWeIdPrivateKey().getPrivateKey(),

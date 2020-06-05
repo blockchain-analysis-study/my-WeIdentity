@@ -35,16 +35,20 @@ import lombok.Data;
 public class EvidenceInfo {
 
     /**
+     * 当前 Evidence 对应的 Credential 的全量Hash
      * Required: full Credential hash.
      */
     private String credentialHash;
 
     /**
+     * 对 Evidence Hash 的签名信息
+     * todo 可以知道 Evidence 中存储的 signature 可以使多个 ...
      * Required: sign info mapping (key: signer WeID, value: evidenceSignInfo).
      */
     private Map<String, EvidenceSignInfo> signInfo = new HashMap<>();
 
     /**
+     * 获取所有的 签名人
      * Get all signers info.
      *
      * @return signers list
@@ -58,6 +62,8 @@ public class EvidenceInfo {
     }
 
     /**
+     *
+     * 获取所有的 签名信息
      * Get all signatures info.
      *
      * @return signatures list

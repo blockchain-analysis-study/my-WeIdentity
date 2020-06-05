@@ -99,6 +99,8 @@ public final class CredentialUtils {
     }
 
     /**
+     *
+     * 生成 Credential 的签名
      * Build the credential Proof.
      *
      * @param credential the credential

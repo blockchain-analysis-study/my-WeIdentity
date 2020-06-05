@@ -290,37 +290,54 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         return true;
     }
 
-    //向policy中补充缺失的key
+    // 向policy中补充缺失的key
     private static void addKeyToPolicy(
-        Map<String, Object> disclosureMap,
-        Map<String, Object> claimMap
+        Map<String, Object> disclosureMap,    // 选择性披露 字段的 key => value  需要回填信息的
+        Map<String, Object> claimMap          // 需要用于对比 原始Claim
     ) {
+
+        // todo 遍历当前 Claim
         for (Map.Entry<String, Object> entry : claimMap.entrySet()) {
             String claimK = entry.getKey();
             Object claimV = entry.getValue();
+
+            // todo 处理是 Map 的Value
             if (claimV instanceof Map) {
                 HashMap claimHashMap = (HashMap) claimV;
+
+                // 如果 不具备选择性披露, 则需要在 选择性披露的 Map 中加入 fieldName => {} 的 k-v
                 if (!disclosureMap.containsKey(claimK)) {
                     disclosureMap.put(claimK, new HashMap());
                 }
                 HashMap disclosureHashMap = (HashMap) disclosureMap.get(claimK);
-                addKeyToPolicy(disclosureHashMap, claimHashMap);
-            } else if (claimV instanceof List) {
+
+                addKeyToPolicy(disclosureHashMap, claimHashMap); // 递归处理 因为 Claim 中可能 嵌套多层 json 哦
+            }
+            // 处理是 List 的Value
+            else if (claimV instanceof List) {
                 ArrayList claimList = (ArrayList) claimV;
                 //判断claimList中是否包含Map结构，还是单一结构
                 boolean isSampleList = isSampleListForClaim(claimList);
                 if (isSampleList) {
+                    // 如果 不具备选择性披露, 则需要在 选择性披露的 Map 中加入 fieldName => 0 的 k-v
                     if (!disclosureMap.containsKey(claimK)) {
                         disclosureMap.put(claimK, Integer.parseInt(NOT_DISCLOSED));
                     }
                 } else {
+
+                    // 如果 不具备选择性披露, 则需要在 选择性披露的 Map 中加入 fieldName => [] 的 k-v
                     if (!disclosureMap.containsKey(claimK)) {
                         disclosureMap.put(claimK, new ArrayList());
                     }
+
+
                     ArrayList disclosureList = (ArrayList) disclosureMap.get(claimK);
                     addKeyToPolicyList(disclosureList, claimList);
                 }
-            } else {
+            }
+            // 处理 正常 单值的 Value
+            else {
+                // todo 如果不存在 选择性披露的Map 中, 需要放入 filedName => 0 这样的 k-v
                 if (!disclosureMap.containsKey(claimK)) {
                     disclosureMap.put(claimK, Integer.parseInt(NOT_DISCLOSED));
                 }
@@ -373,28 +390,46 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         Map<String, Object> claim,
         boolean isZkp
     ) {
+
+        // todo  遍历当前 选择性披露的 Map
         for (Map.Entry<String, Object> entry : disclosureMap.entrySet()) {
-            String disclosureKey = entry.getKey();
-            Object value = entry.getValue();
-            Object saltV = saltMap.get(disclosureKey);
-            Object claimV = claim.get(disclosureKey);
+
+            String disclosureKey = entry.getKey();  // 选择性披露的 key
+            Object value = entry.getValue();        // 选择性披露的 value todo 这个如果不具备 选择性披露的话一般是 空值 `{} []` 或者 0值
+
+            Object saltV = saltMap.get(disclosureKey);  // 根据 key 获取 对应 key 上的 salt
+            Object claimV = claim.get(disclosureKey);   // 根据 key 获取Claim 中 对应 key 上的原始 value
+
+            // todo 选择性披露的value 情况一, 永远不存在
             if (value == null) {
                 throw new WeIdBaseException(ErrorCode.CREDENTIAL_POLICY_DISCLOSUREVALUE_ILLEGAL);
-            } else if ((value instanceof Map) && (claimV instanceof Map)) {
-                addSelectSalt((HashMap) value, (HashMap) saltV, (HashMap) claimV, isZkp);
-            } else if (value instanceof List) {
+            }
+
+            // todo 选择性披露的value 情况二, 类型 map
+            else if ((value instanceof Map) && (claimV instanceof Map)) {
+                // 需要 一层层出力
+                addSelectSalt((HashMap) value, (HashMap) saltV, (HashMap) claimV, isZkp); // 递归
+
+            }
+
+            // todo 选择性披露的value 情况三, 类型 list
+            else if (value instanceof List) {
                 addSaltForList(
                     (ArrayList<Object>) value,
                     (ArrayList<Object>) saltV,
                     (ArrayList<Object>) claimV,
                     isZkp
                 );
-            } else {
+            }
+
+            // todo 选择性披露的value 情况三, 类型 单值
+            else {
                 addHashToClaim(saltMap, claim, disclosureKey, value, saltV, claimV, isZkp);
             }
         }
     }
 
+    // 给
     private static void addHashToClaim(
         Map<String, Object> saltMap,
         Map<String, Object> claim,
@@ -405,6 +440,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         boolean isZkp
     ) {
 
+        // 如果是 用 zkp 形式
         if (isZkp) {
             if ((value instanceof Map) || !(((Integer) value).equals(Integer.parseInt(DISCLOSED))
                 && claim.containsKey(disclosureKey))) {
@@ -415,11 +451,17 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                     );
                 claim.put(disclosureKey, hash);
             }
-        } else {
+        }
+        // 如果 不是 zkp 形式出力
+        else {
 
+            // todo 如果 value 是 【非选择性披露】
             if (((Integer) value).equals(Integer.parseInt(NOT_DISCLOSED))
                 && claim.containsKey(disclosureKey)) {
+                // 覆盖掉 salMap 中对应的 saltValue
                 saltMap.put(disclosureKey, NOT_DISCLOSED);
+
+                // 计算 非披露的值的Hash
                 String hash =
                     CredentialPojoUtils.getFieldSaltHash(
                         String.valueOf(claimV),
@@ -1294,6 +1336,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
      *          com.webank.weid.protocol.base.ClaimPolicy
      *      )
      */
+    // todo 生成选择性披露的 Credential
     @Override
     public ResponseData<CredentialPojo> createSelectiveCredential(
         CredentialPojo credential,
@@ -1303,6 +1346,9 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             logger.error("[createSelectiveCredential] input credential is null");
             return new ResponseData<CredentialPojo>(null, ErrorCode.ILLEGAL_INPUT);
         }
+
+        // 看下 是 LITE1 类型 还是 ZKP 类型
+        // todo LITE1 和 ZKP 不具备 选择性披露性质, 他们只用于 零知识证明或者具备密码学的 Credential
         if (credential.getType() != null 
             && (credential.getType().contains(CredentialType.LITE1.getName()) 
             || credential.getType().contains(CredentialType.ZKP.getName()))) {
@@ -1312,6 +1358,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             return new ResponseData<CredentialPojo>(null,
                 ErrorCode.CREDENTIAL_NOT_SUPPORT_SELECTIVE_DISCLOSURE);
         }
+
+        // todo 只有 ORIGINAL 类型的 Credential 具备选择性披露
         try {
             CredentialPojo credentialClone = DataToolUtils.clone(credential);
             ErrorCode checkResp = CredentialPojoUtils.isCredentialPojoValid(credentialClone);
@@ -1330,10 +1378,12 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             if (CredentialPojoUtils.isSelectivelyDisclosed(credential.getSalt())) {
                 return new ResponseData<CredentialPojo>(null, ErrorCode.CREDENTIAL_RE_DISCLOSED);
             }
+            // todo 获取当前 policy 中的 选择性披露的字段
             String disclosure = claimPolicy.getFieldsToBeDisclosed();
             Map<String, Object> saltMap = credentialClone.getSalt();
             Map<String, Object> claim = credentialClone.getClaim();
 
+            // 转化成 map 形式
             Map<String, Object> disclosureMap = DataToolUtils
                 .deserialize(disclosure, HashMap.class);
 
@@ -1345,7 +1395,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                 return new ResponseData<CredentialPojo>(null,
                     ErrorCode.CREDENTIAL_POLICY_FORMAT_DOSE_NOT_MATCH_CLAIM);
             }
-            // 补 policy
+            // 补 policy todo  向 disclosureMap 中补充缺失的key
             addKeyToPolicy(disclosureMap, claim);
             // 加盐处理
             addSelectSalt(disclosureMap, saltMap, claim, false);
@@ -1781,6 +1831,14 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         return this.verifyDisclosureAndSalt(disclosureMap, saltMap);
     }
 
+    /**
+     * TODO 创建一个 Presentation 实例
+     * @param credentialList original credential list
+     * @param presentationPolicyE the disclosure strategies.
+     * @param challenge used for authentication
+     * @param weIdAuthentication owner information
+     * @return
+     */
     @Override
     public ResponseData<PresentationE> createPresentation(
         List<CredentialPojo> credentialList,
@@ -1788,13 +1846,14 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         Challenge challenge,
         WeIdAuthentication weIdAuthentication) {
 
+        // 构造一个 空的 Presentation
         PresentationE presentation = new PresentationE();
         try {
             // 检查输入数据完整性
             ErrorCode errorCode =
                 validateCreateArgs(
-                    credentialList,
-                    presentationPolicyE,
+                    credentialList,             // Credential List
+                    presentationPolicyE,        // Presentation的Policy
                     challenge,
                     weIdAuthentication
                 );
@@ -1807,7 +1866,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                 return new ResponseData<PresentationE>(null, errorCode);
             }
             // 处理credentialList数据
-            errorCode = processCredentialList(credentialList, presentationPolicyE, presentation,
+            errorCode = processCredentialList(credentialList, presentationPolicyE, presentation, // 这个是要 回填的 presentation
                 weIdAuthentication.getWeId());
             if (errorCode.getCode() != ErrorCode.SUCCESS.getCode()) {
                 logger.error(
@@ -1817,7 +1876,10 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                 );
                 return new ResponseData<PresentationE>(null, errorCode);
             }
+
+            // 给 Presentation 实例填充 @context 的内容
             presentation.getContext().add(CredentialConstant.DEFAULT_CREDENTIAL_CONTEXT);
+            // 给 Presentation 实例填充 type 的内容
             presentation.getType().add(WeIdConstant.DEFAULT_PRESENTATION_TYPE);
             // 处理proof数据
             generatePresentationProof(challenge, weIdAuthentication, presentation);
@@ -1828,6 +1890,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         }
     }
 
+    // todo 校验 创建 Presentation 的入参
     private ErrorCode validateCreateArgs(
         List<CredentialPojo> credentialList,
         PresentationPolicyE presentationPolicyE,
@@ -1853,9 +1916,14 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         if (StringUtils.isBlank(weIdAuthentication.getWeIdPublicKeyId())) {
             return ErrorCode.PRESENTATION_WEID_PUBLICKEY_ID_INVALID;
         }
+
+
+        // 上面都是一些 形式检验
+        // todo 这里才是 根据  presentation 的 policy 校验 Credential List中的 Credential
         return validateClaimPolicy(credentialList, presentationPolicyE);
     }
 
+    // todo 根据  presentation 的 policy 校验 Credential List中的 Credential
     private ErrorCode validateClaimPolicy(
         List<CredentialPojo> credentialList,
         PresentationPolicyE presentationPolicyE) {
@@ -1873,44 +1941,63 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         if (ErrorCode.SUCCESS.getCode() != weIdRes.getErrorCode() || !weIdRes.getResult()) {
             return ErrorCode.PRESENTATION_POLICY_PUBLISHER_WEID_NOT_EXIST;
         }
+
+        // todo 逐个校验 Credential 是否可用
         for (CredentialPojo credentialPojo : credentialList) {
             ErrorCode checkResp = CredentialPojoUtils.isCredentialPojoValid(credentialPojo);
             if (ErrorCode.SUCCESS.getCode() != checkResp.getCode()) {
                 return checkResp;
             }
         }
+
+        // todo 收集出 所有的Credential信息中的 cptId
         List<Integer> cptIdList = credentialList.stream().map(
             cpwl -> cpwl.getCptId()).collect(Collectors.toList());
+
+        // todo 收集出 Policy 中的 cptId
         Set<Integer> claimPolicyCptSet = presentationPolicyE.getPolicy().keySet();
+
+        // TODO 比较 双方的 cptId 是否匹配
         if (!cptIdList.containsAll(claimPolicyCptSet)) {
             return ErrorCode.PRESENTATION_CREDENTIALLIST_MISMATCH_CLAIM_POLICY;
         }
         return ErrorCode.SUCCESS;
     }
 
+    // 处理credentialList数据, 给 presentation 实例的 `verifiableCredential` 字段回填值
     private ErrorCode processCredentialList(
         List<CredentialPojo> credentialList,
         PresentationPolicyE presentationPolicy,
         PresentationE presentation,
         String userId) {
 
+        // 构建一个 需要对外展示的CredentialPojo List
         List<CredentialPojo> newCredentialList = new ArrayList<>();
-        // 获取ClaimPolicyMap
+        // 获取 Presentation的Policy中的  ClaimPolicyMap
         Map<Integer, ClaimPolicy> claimPolicyMap = presentationPolicy.getPolicy();
 
+        // 获取 构建 Presentation 的policy类型 {ORIGINAL, ZKP}
         String policyType = presentationPolicy.getPolicyType();
+
+        // 如果是 ZKP 类型的 Policy
         if (StringUtils.equals(policyType, CredentialType.ZKP.getName())) {
+
+            // todo 将入参的 Credential List 生成零知识证明相关的 Credential List信息
             newCredentialList = generateZkpCredentialList(credentialList, presentationPolicy,
                 userId);
-        } else {
+        }
+        // 否则是  ORIGINAL 类型的 Policy
+        else {
+
             // 遍历所有原始证书
             for (CredentialPojo credential : credentialList) {
-                // 根据原始证书获取对应的 claimPolicy
+                // 根据原始证书获取对应的 claimPolicy todo (这里头装着 Claim 需要披露的字段名)
                 ClaimPolicy claimPolicy = claimPolicyMap.get(credential.getCptId());
                 if (claimPolicy == null) {
                     continue;
                 }
-                // 根据原始证书和claimPolicy去创建选择性披露凭证
+                // 根据原始证书和claimPolicy去创建 选择性披露凭证
+                // todo 生成选择性披露的 Credential
                 ResponseData<CredentialPojo> res =
                     this.createSelectiveCredential(credential, claimPolicy);
                 if (res.getErrorCode().intValue() != ErrorCode.SUCCESS.getCode()) {

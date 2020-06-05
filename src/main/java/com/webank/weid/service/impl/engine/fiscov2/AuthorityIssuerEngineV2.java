@@ -105,6 +105,7 @@ public class AuthorityIssuerEngineV2 extends BaseEngine implements AuthorityIssu
         AuthorityIssuer authorityIssuer = args.getAuthorityIssuer();
         String weAddress = WeIdUtils.convertWeIdToAddress(authorityIssuer.getWeId());
         List<byte[]> stringAttributes = new ArrayList<byte[]>();
+
         stringAttributes.add(authorityIssuer.getName().getBytes());
         List<BigInteger> longAttributes = new ArrayList<>();
         Long createDate = DateUtils.getNoMillisecondTimeStamp();
@@ -116,16 +117,16 @@ public class AuthorityIssuerEngineV2 extends BaseEngine implements AuthorityIssu
                 AuthorityIssuerController.class);
 
             TransactionReceipt receipt = authorityIssuerController.addAuthorityIssuer(
-                weAddress,
-                DataToolUtils.bytesArrayListToBytes32ArrayList(
+                weAddress, // WeId
+                DataToolUtils.bytesArrayListToBytes32ArrayList(  // [name]
                     stringAttributes,
                     WeIdConstant.AUTHORITY_ISSUER_ARRAY_LEGNTH
                 ),
-                DataToolUtils.listToListBigInteger(
+                DataToolUtils.listToListBigInteger(  // [timestamp]
                     longAttributes,
                     WeIdConstant.AUTHORITY_ISSUER_ARRAY_LEGNTH
                 ),
-                authorityIssuer.getAccValue().getBytes()
+                authorityIssuer.getAccValue().getBytes() // ?
             ).send();
             ErrorCode errorCode = resolveRegisterAuthorityIssuerEvents(receipt);
             TransactionInfo info = new TransactionInfo(receipt);

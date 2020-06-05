@@ -908,6 +908,7 @@ public final class CredentialPojoUtils {
     }
 
     /**
+     * todo  校验 Credential 是否可用
      * Check the given CredentialPojo validity based on its input params.
      *
      * @param args CredentialPojo
