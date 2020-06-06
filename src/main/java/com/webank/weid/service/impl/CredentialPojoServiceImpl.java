@@ -1525,6 +1525,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         return new ResponseData<Boolean>(true, ErrorCode.SUCCESS);
     }
 
+    // todo 校验 Presentation
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.CredentialPojoService#verify(
      *          java.lang.String,

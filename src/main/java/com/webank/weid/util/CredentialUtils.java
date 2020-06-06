@@ -365,6 +365,11 @@ public final class CredentialUtils {
     }
 
     /**
+     *
+     * todo 根据其所有字段为凭证创建完整的凭证哈希.
+     *      获取凭据证据时应调用此方法.
+     *      请注意: 结果是固定长度为66个字节的字符串, 包括前两个字节("0x") 和 64个 byte 的哈希值。
+     *
      * Create a full Credential Hash for a Credential based on all its fields. This should be
      * invoked when getting Credential Evidence. Please note: the result is a String with fixed
      * length 66 bytes including the first two bytes ("0x") and 64 bytes Hash value.
@@ -373,6 +378,7 @@ public final class CredentialUtils {
      * @return Hash in byte array
      */
     public static String getCredentialHash(Credential arg) {
+        // 求 各个字段的 总Hash
         String rawData = getCredentialThumbprint(arg, null);
         if (StringUtils.isEmpty(rawData)) {
             return StringUtils.EMPTY;

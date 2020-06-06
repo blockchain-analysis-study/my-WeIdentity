@@ -88,6 +88,12 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
     }
 
     /**
+     * todo 将传入Object计算Hash值生成存证上链，返回存证hash值。
+     *      传入的私钥将会成为链上存证的签名方。
+     *      【此签名方和凭证的Issuer可以不是同一方】。
+     *      此接口返回的Hash值和generateHash()接口返回值一致。
+     *      同样的传入Object可以由不同的私钥注册存证，它们的链上存证值将会共存。
+     *
      * todo 在链上创建一个 新的 Evidence
      * Create a new evidence to the blockchain and get the evidence address.
      *
@@ -117,7 +123,10 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
 
 
     /**
-     *  为任何现有 Evidence 设置任意额外的属性
+     * todo 为一个已经在链上存在的存证添加额外信息记录存入其log中。
+     *      有两个接口，一个是以hash值为索引，一个可以接受用户自定义索引。
+     *
+     *  todo 为任何现有 Evidence 设置任意额外的属性
      *
      * @param hashValue hash value,  Evidence Hash的值
      * @param log log entry - can be null or empty  额外信息, 可以为 null ""
@@ -150,6 +159,9 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
     }
 
 
+    // todo 为一个已经在链上存在的存证添加额外信息记录存入其log中。
+    //      有两个接口，一个是以hash值为索引，一个可以接受用户自定义索引。
+    //
     // todo 根据 客户自定义的 ExtraKey {关键字}  log 等
     @Override
     public ResponseData<Boolean> addLogByCustomKey(String customKey, String log,
@@ -170,6 +182,9 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
         return this.addLogByHash(hashResp.getResult(), log, weIdPrivateKey);
     }
 
+    // todo 将传入的任意Object计算Hash值，不需网络。
+    //      可以接受**任意Hashable对象**（如凭证）、**File**（Java里的文件实例）、**String**（字符串）。
+    //      对于不符合类型的入参，将返回类型不支持错误。返回值为HashString，可以直接传入CreateEvidence接口用于存证创建。
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.generateHash
      * #generateHash(T object)
@@ -242,7 +257,8 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
     }
 
     /**
-     * 上传 Evidence Hash 到区块链的实际方法，在不同的区块链版本中有所不同。
+     * todo 上传 Evidence Hash 到区块链的实际方法，在不同的区块链版本中有所不同。
+     *
      * Actual method to upload to blockchain, varied in different blockchain versions.
      *
      * @param hashValue the hash value to be uploaded
@@ -301,6 +317,9 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
     }
 
     /**
+     * todo 根据传入的凭证存证hash值，在链上查找凭证在链上是否存在。
+     *      如果存在，则返回所有为此hash值创建过存证的创建方，及其创建时间、额外信息。
+     *
      * todo 获取 链上的 Evidence 数据
      * Get the evidence from blockchain.
      *
@@ -331,6 +350,9 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
         SignatureData signatureData
     ) {
         try {
+
+
+            // 根据 WeId 查回 chain 上的 Document
             ResponseData<WeIdDocument> innerResponseData =
                 weIdService.getWeIdDocument(signerWeId);
             if (innerResponseData.getErrorCode() != ErrorCode.SUCCESS.getCode()) {
@@ -340,6 +362,8 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
                 return new ResponseData<>(false, ErrorCode.CREDENTIAL_WEID_DOCUMENT_ILLEGAL);
             }
             WeIdDocument weIdDocument = innerResponseData.getResult();
+
+            // 验签
             ErrorCode errorCode = DataToolUtils
                 .verifySignatureFromWeId(rawData, signatureData, weIdDocument);
             if (errorCode.getCode() != ErrorCode.SUCCESS.getCode()) {
@@ -353,6 +377,8 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
     }
 
     /**
+     * todo 根据传入的存证信息和WeID，从链上根据WeID的公钥，判断此存证是否合法。
+     *
      * Validate whether an evidence is signed by this WeID.
      *
      * @param evidenceInfo the evidence info fetched from chain
@@ -366,6 +392,9 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
 
 
     /**
+     *
+     * todo 根据传入的存证信息和WeID，及传入的公钥，判断此WeID是否为存证的合法创建者。不需要链上交互.
+     *
      * Validate whether an evidence is signed by this WeID with passed-in public key.
      *
      * @param evidenceInfo the evidence info fetched from chain
@@ -377,7 +406,9 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
     public ResponseData<Boolean> verifySigner(
         EvidenceInfo evidenceInfo,
         String weId,
-        String publicKey) {
+        String publicKey) {  // 入参的 publicKey 可以为 null
+
+        // 入参非空、格式及合法性检查
         if (evidenceInfo == null || evidenceInfo.getSigners().isEmpty()) {
             return new ResponseData<>(false, ErrorCode.ILLEGAL_INPUT);
         }
@@ -388,16 +419,23 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
             logger.error("This Evidence does not contain the provided WeID: {}", weId);
             return new ResponseData<>(false, ErrorCode.WEID_DOES_NOT_EXIST);
         }
+
+        // 查回当前 WeId 对该 Evidence 的signature
         EvidenceSignInfo signInfo = evidenceInfo.getSignInfo().get(weId);
         String signature = signInfo.getSignature();
         if (!DataToolUtils.isValidBase64String(signature)) {
             return new ResponseData<>(false, ErrorCode.CREDENTIAL_EVIDENCE_SIGNATURE_BROKEN);
         }
+
         SignatureData signatureData =
             DataToolUtils.simpleSignatureDeserialization(
                 DataToolUtils.base64Decode(signature.getBytes(StandardCharsets.UTF_8))
             );
+
+        // 如果 入参的 publicKey 为 null, 需要自己去 chain 上查回 WeId 对应的 Document
+        // 根据存证中签名方信息，调用GetWeIdDocument()查询WeID公钥
         if (StringUtils.isEmpty(publicKey)) {
+            //
             return verifySignatureToSigner(
                 evidenceInfo.getCredentialHash(),
                 WeIdUtils.convertAddressToWeId(weId),
@@ -405,6 +443,8 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
             );
         } else {
             try {
+
+                // 根据公钥 验签
                 boolean result = DataToolUtils
                     .verifySignature(evidenceInfo.getCredentialHash(), signatureData,
                         new BigInteger(publicKey));
@@ -420,6 +460,12 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
         }
     }
 
+    // todo 将传入Object计算Hash值生成存证上链。
+    //      此方法允许在创建存证时写入额外信息。
+    //      额外信息为一个log记录，从后往前叠加存储。
+    //      不同私钥发交易方的额外信息也是共存且相互独立存储的。
+    //      如果您重复调用此接口，那么新写入的额外值会以列表的形式添加到之前的log列表之后。
+    //      此方法还允许传入一个用户自定义的custom key (可能是一个 关键字)，用来查询链上的存证（而不是通过hash）。
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.EvidenceService#createEvidenceWithLogAndCustomKey(
      * com.webank.weid.protocol.inf.Hashable, com.webank.weid.protocol.base.WeIdPrivateKey,
@@ -509,6 +555,8 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
         }
     }
 
+    // todo 根据传入的自定义索引，在链上查找凭证在链上是否存在。
+    //      如果存在，则返回所有为此索引值值创建过存证的创建方，及其创建时间、额外信息。
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.EvidenceService#getEvidenceByCustomKey(java.lang.String)
      */

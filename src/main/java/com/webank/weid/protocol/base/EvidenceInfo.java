@@ -43,6 +43,8 @@ public class EvidenceInfo {
     /**
      * 对 Evidence Hash 的签名信息
      * todo 可以知道 Evidence 中存储的 signature 可以使多个 ...
+     *
+     * todo  (WeId => signature)
      * Required: sign info mapping (key: signer WeID, value: evidenceSignInfo).
      */
     private Map<String, EvidenceSignInfo> signInfo = new HashMap<>();

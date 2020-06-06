@@ -166,8 +166,13 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
     }
 
     /**
+     *
+     * todo 多签，在原凭证列表的基础上，创建包裹成一个新的多签凭证，由传入的私钥所签名。此凭证的CPT为一个固定值。在验证一个多签凭证时，会迭代验证其包裹的所有子凭证。本接口不支持创建选择性披露的多签凭证。
+     *
      * Add an extra signer and signature to a Credential. Multiple signatures will be appended in an
      * embedded manner.
+     *
+     * todo 向凭据添加额外的签名者和签名。 多个签名将以嵌入方式添加
      *
      * @param credentialList original credential
      * @param weIdPrivateKey the passed-in privateKey and WeID bundle to sign
@@ -275,6 +280,7 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
     }
 
     /**
+     * todo 验证凭证是否正确，需传入公钥
      * Verify the validity of a credential with public key provided.
      *
      * @param credentialWrapper the args
@@ -295,6 +301,7 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
     }
 
     /**
+     * todo 传入Credential信息生成Credential整体的Hash值，一般在生成Evidence时调用
      * The only standardized inf to create a full Credential Hash for a given Credential.
      *
      * @param args the args
@@ -302,17 +309,26 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
      */
     @Override
     public ResponseData<String> getCredentialHash(Credential args) {
+        // 入参非空、格式及合法性检查
         ErrorCode innerResponse = CredentialUtils.isCredentialValid(args);
         if (ErrorCode.SUCCESS.getCode() != innerResponse.getCode()) {
             return new ResponseData<>(StringUtils.EMPTY, innerResponse);
         }
+
+        // 返回凭证 Hash
         return new ResponseData<>(CredentialUtils.getCredentialHash(args), ErrorCode.SUCCESS);
     }
 
     /**
+     * todo 传入Credential信息生成Credential整体的Hash值，一般在生成Evidence时调用
+     *
      * Get the full hash value of a Credential with its selectively-disclosure map. All fields in
      * the Credential will be included. This method should be called when creating and verifying the
      * Credential Evidence and the result is selectively-disclosure irrelevant.
+     *
+     * todo  使用凭据的选择性公开 Map 获取凭据的完整哈希值.
+     *       凭据中的所有字段都将包括在内.
+     *       创建和验证凭据证据时应调用此方法, 并且结果与选择披露无关.
      *
      * @param credentialWrapper the args
      * @return the Credential Hash value in byte array, fixed to be 32 Bytes length
@@ -335,6 +351,7 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
             ErrorCode.SUCCESS);
     }
 
+    // TODO 验证 Credential 主体 (其中 Claim 的字段可以是 全披露,  也可以是 选择性披露的)
     private ResponseData<Boolean> verifyCredentialContent(CredentialWrapper credentialWrapper,
         String publicKey) { // publicKey 字段可以存在, 也可以不存在
 
