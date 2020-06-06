@@ -59,6 +59,9 @@ import com.webank.weid.util.DateUtils;
 import com.webank.weid.util.WeIdUtils;
 
 /**
+ * TODO 凭证签发相关功能的核心接口。 (和 CredentialPojoServiceImpl 一起)
+ *
+ * todo 本接口提供凭证的签发和验证操作、Verifiable Presentation的签发和验证操作。
  * Service implementations for operations on Credential.
  *
  * @author chaoxinhu 2019.1
@@ -73,6 +76,7 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
 
 
     /**
+     * todo 创建电子凭证，默认是original类型，还支持轻量级lite1类型和基于零知识证明的zkp类型的credential
      *
      * todo 创建一个 Credential 的封装 (CredentialWrapper) 其中包含了 Credential 基础信息 和 disclosure 选择披露信息
      * Generate a credential.
@@ -241,17 +245,32 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
     }
 
     /**
+     * todo 验证凭证是否正确
      * Verify Credential validity.
      */
     @Override
     public ResponseData<Boolean> verify(Credential credential) {
+
+        // todo 因为需要校验, 所以 拿到的 Claim 中的 field 都必须是 Hash 字段
+        //
+        // 取出 Credential 中的 Claim, 生成一个 选择性披露 disclosureMap
         Map<String, Object> disclosureMap = new HashMap<>(credential.getClaim());
+        // 遍历 disclosureMap 中的 各个 field
         for (Map.Entry<String, Object> entry : disclosureMap.entrySet()) {
+            // 给 disclosureMap 中的 value 全改成 "0"
             disclosureMap.put(entry.getKey(), CredentialFieldDisclosureValue.DISCLOSED.getStatus());
         }
+
+        // 现在外头 组装成一个 Credential Wrapper 封装
         CredentialWrapper credentialWrapper = new CredentialWrapper();
+
+        // 设置 需要被校验的 Credential (可能是全披露的,  也可能是选择性披露的)
         credentialWrapper.setCredential(credential);
+
+        // 设置 选择性披露的 k-v map
         credentialWrapper.setDisclosure(disclosureMap);
+
+        // go ...
         return verifyCredentialContent(credentialWrapper, null);
     }
 
@@ -317,8 +336,11 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
     }
 
     private ResponseData<Boolean> verifyCredentialContent(CredentialWrapper credentialWrapper,
-        String publicKey) {
+        String publicKey) { // publicKey 字段可以存在, 也可以不存在
+
+        // 取出 需要验证的 Credential
         Credential credential = credentialWrapper.getCredential();
+        // todo 入参非空、格式及合法性检查
         ErrorCode innerResponse = CredentialUtils.isCredentialValid(credential);
         if (ErrorCode.SUCCESS.getCode() != innerResponse.getCode()) {
             logger.error("Credential input format error!");
@@ -331,9 +353,15 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
         if (credential.getCptId() == CredentialConstant.CREDENTIAL_EMBEDDED_SIGNATURE_CPT
             .intValue()) {
             // This is a multi-signed Credential, and its disclosure is against its leaf
+            //
+            // 这是一个多签名凭证，其披露违反了其规定
             Map<String, Object> disclosure = credentialWrapper.getDisclosure();
             // We firstly verify itself
+            //
+            // 我们首先验证自己
             credentialWrapper.setDisclosure(null);
+
+            // 校验 单签名 Credential
             ResponseData<Boolean> innerResp = verifySingleSignedCredential(credentialWrapper,
                 publicKey);
             if (!innerResp.getResult()) {
@@ -341,12 +369,16 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
                     innerResp.getErrorMessage());
             }
             // Then, we verify its list members one-by-one
+            //
+            // 然后，我们逐一验证其列表成员
             credentialWrapper.setDisclosure(disclosure);
             List<Credential> innerCredentialList;
             try {
                 if (credentialWrapper.getCredential().getClaim()
                     .get("credentialList") instanceof String) {
                     // For selectively-disclosed credential, just skip - external check is enough
+                    //
+                    // 对于有选择地公开的凭证，只需跳过-外部检查就足够了
                     return new ResponseData<>(true, ErrorCode.SUCCESS);
                 } else {
                     innerCredentialList = (ArrayList) credentialWrapper.getCredential().getClaim()
@@ -358,6 +390,8 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
             for (Credential innerCredential : innerCredentialList) {
                 credentialWrapper.setCredential(innerCredential);
                 // Make sure that this disclosure is a meaningful one
+                //
+                // 确保这项披露是有意义的
                 if (disclosure != null && disclosure.size() <= 1
                     && disclosure.size() != innerCredential.getClaim().size()
                     && disclosure.containsKey("credentialList")) {
@@ -366,6 +400,8 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
                 if (disclosure == null) {
                     credentialWrapper.setDisclosure(null);
                 }
+
+                // todo 递归
                 innerResp = verifyCredentialContent(credentialWrapper, publicKey);
                 if (!innerResp.getResult()) {
                     return new ResponseData<>(false, innerResp.getErrorCode(),
@@ -374,17 +410,23 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
             }
             return new ResponseData<>(true, ErrorCode.SUCCESS);
         }
+        // 校验 单签名 Credential
         return verifySingleSignedCredential(credentialWrapper, publicKey);
     }
 
+    // todo 校验 单签名 Credential (目前 是有 单签凭证 ??  虽然 系统 cpt106 和 cpt107 是 支持多签的)
     private ResponseData<Boolean> verifySingleSignedCredential(CredentialWrapper credentialWrapper,
         String publicKey) {
         Credential credential = credentialWrapper.getCredential();
+        // 校验 issyer 的 WeId 是否存在
         ResponseData<Boolean> responseData = verifyIssuerExistence(credential.getIssuer());
         if (!responseData.getResult()) {
             return responseData;
         }
 
+        // 查询CPT存在性及Claim关联语义
+        // 调用智能合约，查询CPT
+        // CPT格式要求
         ErrorCode errorCode = verifyCptFormat(
             credential.getCptId(),
             credential.getClaim()
@@ -393,10 +435,15 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
             return new ResponseData<>(false, errorCode);
         }
 
+        // 验证过期、撤销与否
         responseData = verifyNotExpired(credential);
         if (!responseData.getResult()) {
             return responseData;
         }
+        // 通过公钥与签名对比，验证Issuer是否签发此凭证
+        // publicKey 可能为 null
+        // 这时候需要先 调用智能合约，查询Issuer的WeIdentity DID Document
+        // 获取 publicKey
         responseData = verifySignature(credentialWrapper, publicKey);
         return responseData;
     }
@@ -417,6 +464,7 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
     }
 
 
+    // 校验 issyer 的 WeId 是否存在
     private ResponseData<Boolean> verifyIssuerExistence(String issuerWeId) {
         ResponseData<Boolean> responseData = weIdService.isWeIdExist(issuerWeId);
         if (responseData == null || !responseData.getResult()) {
@@ -475,15 +523,27 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
         }
     }
 
+    // 校验 签名
+    // 通过公钥与签名对比，验证Issuer是否签发此凭证
+    //
+    // publicKey 可能为 null
+    // 这时候需要先 调用智能合约，查询Issuer的WeIdentity DID Document
+    // 获取 publicKey
     private ResponseData<Boolean> verifySignature(
         CredentialWrapper credentialWrapper,
-        String publicKey) {
+        String publicKey) { // publicKey 可以为 null
 
         try {
+            // 取出需要 验证的 Credential 信息 (字段可以使全披露的/ 也可以是选择性披露的)
             Credential credential = credentialWrapper.getCredential();
+            // 取出 选择性披露 field 要求
             Map<String, Object> disclosureMap = credentialWrapper.getDisclosure();
+
+            // 计算 credential 字段的Hash  todo (妈的, 这里为什么 不加salt算Hash ??)
             String rawData = CredentialUtils
                 .getCredentialThumbprintWithoutSig(credential, disclosureMap);
+
+            // todo 提取出 proof 中的 signatureValue 字段的值
             Sign.SignatureData signatureData =
                 DataToolUtils.simpleSignatureDeserialization(
                     DataToolUtils.base64Decode(
@@ -491,6 +551,7 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
                     )
                 );
 
+            // 如果 入参的 PublicKey 为 null, 则需要我们自己去 查对应 WeId 的Document 中的 publicKey
             if (StringUtils.isEmpty(publicKey)) {
                 // Fetch public key from chain
                 String credentialIssuer = credential.getIssuer();
@@ -502,6 +563,7 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
                         credentialIssuer, innerResponseData.getErrorMessage());
                     return new ResponseData<>(false, ErrorCode.CREDENTIAL_WEID_DOCUMENT_ILLEGAL);
                 } else {
+                    // todo 使用 Document 和 获取的 Claim Sha3 Hash 和 签名 去做验签
                     WeIdDocument weIdDocument = innerResponseData.getResult();
                     ErrorCode errorCode = DataToolUtils
                         .verifySignatureFromWeId(rawData, signatureData, weIdDocument);
@@ -511,6 +573,8 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
                     return new ResponseData<>(true, ErrorCode.SUCCESS);
                 }
             } else {
+
+                // 如果有 公钥, 则直接去做 验签
                 boolean result =
                     DataToolUtils
                         .verifySignature(rawData, signatureData, new BigInteger(publicKey));

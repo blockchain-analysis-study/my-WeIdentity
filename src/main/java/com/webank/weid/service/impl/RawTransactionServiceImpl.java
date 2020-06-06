@@ -28,6 +28,8 @@ import com.webank.weid.protocol.response.ResponseData;
 import com.webank.weid.rpc.RawTransactionService;
 
 /**
+ *
+ * 用于在区块链上进行直接 tx 的服务的服务接口
  * Service interface for operations on direct transactions on blockchain.
  *
  * @author chaoxinhu 2019.4

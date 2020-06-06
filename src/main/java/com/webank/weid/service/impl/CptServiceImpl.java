@@ -47,6 +47,11 @@ import com.webank.weid.util.DataToolUtils;
 import com.webank.weid.util.WeIdUtils;
 
 /**
+ * todo 任何凭证的签发，都需要将数据转换成已经注册的CPT (Claim Protocol Type)格式规范，
+ *      也就是所谓的“标准化格式化数据”。相关机构事先需要注册好CPT，
+ *      在此之后，签发机构会根据CPT提供符合格式的数据，进而进行凭证的签发。
+ *
+ * todo 本接口提供了对CPT的注册、更新、查询等操作。
  * Service implementation for operation on CPT (Claim Protocol Type).
  *
  * @author lingfenghe
@@ -59,6 +64,61 @@ public class CptServiceImpl extends AbstractService implements CptService {
         CacheManager.registerCacheNode("SYS_CPT", 1000 * 3600 * 24L);
 
     /**
+     * todo 传入WeIdentity DID，JsonSchema(String类型) , cptId和其对应的私钥，链上注册指定cptId的CPT，返回CPT编号和版本
+     *
+     * todo 使用代码示例：
+     *
+     *      CptService cptService = new CptServiceImpl();
+     *
+     *      String jsonSchema = "{\"properties\" : {\"id\": {\"type\": \"string\",\"description\": \"the id of certificate owner\"}, \"name\": {\"type\": \"string\",\"description\": \"the name of certificate owner\"},\"gender\": {\"enum\": [\"F\", \"M\"],\"type\": \"string\",\"description\": \"the gender of certificate owner\"}, \"age\": {\"type\": \"number\", \"description\": \"the age of certificate owner\"}},\"required\": [\"id\", \"name\", \"age\"]}";
+     *
+     *      WeIdPrivateKey weIdPrivateKey = new WeIdPrivateKey();
+     *      weIdPrivateKey.setPrivateKey("60866441986950167911324536025850958917764441489874006048340539971987791929772");
+     *
+     *      WeIdAuthentication weIdAuthentication = new WeIdAuthentication();
+     *      weIdAuthentication.setWeId("did:weid:101:0x39e5e6f663ef77409144014ceb063713b65600e7");
+     *      weIdAuthentication.setWeIdPrivateKey(weIdPrivateKey);
+     *
+     *      CptStringArgs cptStringArgs = new CptStringArgs();
+     *      cptStringArgs.setCptJsonSchema(jsonSchema);
+     *      cptStringArgs.setWeIdAuthentication(weIdAuthentication);
+     *
+     *      ResponseData<CptBaseInfo> response = cptService.registerCpt(cptStringArgs, 103);
+     *
+     *
+     * todo jsonschema 例如:
+     *
+     *   {
+     *       "properties":{
+     *           "id":{
+     *               "type":"string",
+     *               "description":"the id of certificate owner"
+     *           },
+     *           "name":{
+     *               "type":"string",
+     *               "description":"the name of certificate owner"
+     *           },
+     *           "gender":{
+     *               "enum":[
+     *                   "F",
+     *                   "M"
+     *               ],
+     *               "type":"string",
+     *               "description":"the gender of certificate owner"
+     *           },
+     *           "age":{
+     *               "type":"number",
+     *               "description":"the age of certificate owner"
+     *           }
+     *       },
+     *       "required":[
+     *           "id",
+     *           "name",
+     *           "age"
+     *       ]
+     *   }
+     *
+     *
      * todo 注册一个 CPT 模板到 chain 上
      * 将具有预设CPT ID的新CPT注册到区块链。
      * Register a new CPT with a pre-set CPT ID, to the blockchain.
@@ -88,6 +148,7 @@ public class CptServiceImpl extends AbstractService implements CptService {
 
 
     /**
+     * todo 传入WeIdentity DID，JsonSchema(String类型) 和其对应的私钥，链上注册CPT，返回CPT编号和版本
      * This is used to register a new CPT to the blockchain.
      *
      * @param args the args
@@ -116,6 +177,7 @@ public class CptServiceImpl extends AbstractService implements CptService {
     }
 
     /**
+     * todo 传入WeIdentity DID，JsonSchema(Map类型), cptId 和其对应的私钥，链上注册指定cptId的CPT，返回CPT编号和版本。
      * Register a new CPT with a pre-set CPT ID, to the blockchain.
      *
      * @param args the args
@@ -154,6 +216,7 @@ public class CptServiceImpl extends AbstractService implements CptService {
     }
 
     /**
+     * todo 传入WeIdentity DID，JsonSchema(Map类型) 和其对应的私钥，链上注册CPT，返回CPT编号和版本
      * This is used to register a new CPT to the blockchain.
      *
      * @param args the args
@@ -193,6 +256,7 @@ public class CptServiceImpl extends AbstractService implements CptService {
     }
 
     /**
+     * todo 根据CPT编号查询CPT信息
      * this is used to query cpt with the latest version which has been registered.
      *
      * @param cptId the cpt id
@@ -220,6 +284,7 @@ public class CptServiceImpl extends AbstractService implements CptService {
     }
 
     /**
+     * todo  传入cptId，JsonSchema(String类型)，WeIdentity DID，WeIdentity DID所属私钥，进行更新CPT信息，更新成功版本自动+1
      * This is used to update a CPT data which has been register.
      *
      * @param args the args
@@ -245,6 +310,7 @@ public class CptServiceImpl extends AbstractService implements CptService {
     }
 
     /**
+     * todo 传入cptId，JsonSchema(Map类型)，WeIdentity DID，WeIdentity DID所属私钥，进行更新CPT信息，更新成功版本自动+1
      * This is used to update a CPT data which has been register.
      *
      * @param args the args
@@ -368,7 +434,6 @@ public class CptServiceImpl extends AbstractService implements CptService {
     /**
      * create new cpt json schema.
      *
-     * @param cptJsonSchema Map
      * @return String
      */
     private String cptSchemaToString(CptMapArgs args) throws Exception {

@@ -658,7 +658,9 @@ public final class DataToolUtils {
         if (message == null) {
             return false;
         }
+        // 解出 公钥
         BigInteger extractedPublicKey = signatureToPublicKey(message, signatureData);
+        // 判断公钥是否相等
         return extractedPublicKey.equals(publicKey);
     }
 
@@ -906,6 +908,18 @@ public final class DataToolUtils {
     }
 
     /**
+     *
+     * todo 根据提供的原始数据 (Claim Sha3 Hash) 和来自链的 WeID Document, 验证签名.
+     *      这将遍历WeID文档中的每个公共密钥,并获取属于身份验证列表的所有密钥.
+     *      然后, 验证每个人的签名;
+     *      如果有人匹配,则返回true.
+     *      这在CredentialService和EvidenceService中使用.
+     *
+     *
+     *
+     *
+     *
+     *
      * Verify a signature based on the provided raw data, and the WeID Document from chain. This
      * will traverse each public key in the WeID Document and fetch all keys which belongs to the
      * authentication list. Then, verify signature to each one; return true if anyone matches. This
@@ -923,6 +937,10 @@ public final class DataToolUtils {
         List<String> publicKeysListToVerify = new ArrayList<String>();
 
         // Traverse public key list indexed Authentication key list
+        //
+        // 遍历公钥列表索引身份验证密钥列表
+        // todo 注意 必须 遍历 auth 中的 公钥索引哦.
+        //      全部都收集起来
         for (AuthenticationProperty authenticationProperty : weIdDocument
             .getAuthentication()) {
             String index = authenticationProperty.getPublicKey();
@@ -932,16 +950,24 @@ public final class DataToolUtils {
                 }
             }
         }
+
+
         try {
             boolean result = false;
+
+            // 遍历所有 被收集起来的公钥
             for (String publicKeyItem : publicKeysListToVerify) {
                 if (StringUtils.isNotEmpty(publicKeyItem)) {
+
+                    // todo 逐个验签 ?? 我草, 这么挫的做法
                     result =
                         result
                             || verifySignature(
                             rawData, signatureData, new BigInteger(publicKeyItem));
                 }
             }
+
+            // 如果没有一个 公钥验签通过, 则算失败
             if (!result) {
                 return ErrorCode.CREDENTIAL_ISSUER_MISMATCH;
             }

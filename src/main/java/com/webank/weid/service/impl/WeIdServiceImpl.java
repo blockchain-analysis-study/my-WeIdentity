@@ -54,6 +54,8 @@ import com.webank.weid.rpc.WeIdService;
 import com.webank.weid.util.WeIdUtils;
 
 /**
+ * TODO WeIdentity DID相关功能的核心接口
+ *      本接口提供WeIdentity DID的创建、获取信息、设置属性等相关操作
  * Service implementations for operations on WeIdentity DID.
  *
  * @author tonychen 2018.10
@@ -66,6 +68,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
     private static final Logger logger = LoggerFactory.getLogger(WeIdServiceImpl.class);
 
     /**
+     * todo 内部创建公私钥，并链上注册WeIdentity DID， 并返回公钥、私钥以及WeIdentity DID
      * Create a WeIdentity DID with null input param.
      *
      * @return the response data
@@ -77,6 +80,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
         ECKeyPair keyPair = null;
 
         try {
+            // 本地 生成 公私钥对
             keyPair = Keys.createEcKeyPair();
         } catch (Exception e) {
             logger.error("Create weId failed.", e);
@@ -94,6 +98,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
         String weId = WeIdUtils.convertPublicKeyToWeId(publicKey);
         result.setWeId(weId);
 
+        // 根据 PubKey  PriKey  WeId 三者 上链
         ResponseData<Boolean> innerResp = processCreateWeId(weId, publicKey, privateKey, false);
         if (innerResp.getErrorCode() != ErrorCode.SUCCESS.getCode()) {
             logger.error(
@@ -109,6 +114,8 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
     }
 
     /**
+     *
+     * todo 根据传入的公私钥，链上注册WeIdentity DID，并返回WeIdentity DID
      * Create a WeIdentity DID.
      *
      * @param createWeIdArgs the create WeIdentity DID args
@@ -162,6 +169,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
 
     /**
      * todo 查询Document详情  struct
+     *      根据WeIdentity DID查询出WeIdentity DID Document对象
      * Get a WeIdentity DID Document.
      *
      * @param weId the WeIdentity DID
@@ -210,6 +218,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
     /**
      *
      * todo 查询Document详情  jsonStr
+     *      根据WeIdentity DID查询WeIdentity DID Document信息，并以JSON格式返回
      * Get a WeIdentity DID Document Json.
      *
      * @param weId the WeIdentity DID
@@ -348,6 +357,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
     }
 
     /**
+     * todo 根据WeIdentity DID添加公钥
      * Set Public Key.
      *
      * @param setPublicKeyArgs the set public key args
@@ -400,6 +410,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
 
 
     /**
+     * todo 根据WeIdentity DID添加Service信息
      * Set Service.
      *  设置 Service 信息
      * @param setServiceArgs the set service args
@@ -431,6 +442,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
     }
 
     /**
+     * todo 根据WeIdentity DID判断链上是否存在
      * Check if WeIdentity DID exists on Chain.
      *
      * @param weId the WeIdentity DID
@@ -446,6 +458,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
     }
 
     /**
+     * todo 根据WeIdentity DID添加认证者
      * Set Authentication.
      *
      * @param setAuthenticationArgs the set authentication args
@@ -603,6 +616,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
         return serviceTypeLength <= WeIdConstant.BYTES32_FIXED_LENGTH;
     }
 
+    //  将 WeId / PubKey 注册到chain上
     private ResponseData<Boolean> processCreateWeId(
         String weId,
         String publicKey,
@@ -611,6 +625,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
 
         String address = WeIdUtils.convertWeIdToAddress(weId);
         try {
+            // 上链
             return weIdServiceEngine.createWeId(address, publicKey, privateKey, isDelegate);
         } catch (PrivateKeyIllegalException e) {
             logger.error("[createWeId] create weid failed because privateKey is illegal. ",
@@ -642,6 +657,8 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
             || StringUtils.isEmpty(setAuthenticationArgs.getPublicKey()));
     }
 
+    // todo 根据传入的 PubKey 和 代理的PriKey，通过 代理发交易链上注册WeIdentity DID，并返回WeIdentity DID
+    //      传入自己的WeIdentity DID及用作authentication的私钥 (可能是别人的 私钥, 但是是不是 在Document 中对应公钥的东西呢 ？？)
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.WeIdService#delegateCreateWeId(
      * com.webank.weid.protocol.base.WeIdPublicKey,
@@ -691,6 +708,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
         }
     }
 
+    // todo 由代理来给WeIdentity DID添加公钥
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.WeIdService#delegateSetPublicKey(
      * com.webank.weid.protocol.request.PublicKeyArgs,
@@ -781,6 +799,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
         }
     }
 
+    // todo 根据WeIdentity DID添加Service信息
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.WeIdService#delegateSetService(
      * com.webank.weid.protocol.request.SetServiceArgs,
@@ -825,6 +844,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
         String serviceEndpoint,
         boolean isDelegate) {
         if (WeIdUtils.isWeIdValid(weId)) {
+            // 调用 WeIdContract合约, 判断DID
             ResponseData<Boolean> isWeIdExistResp = this.isWeIdExist(weId);
             if (isWeIdExistResp.getResult() == null || !isWeIdExistResp.getResult()) {
                 logger.error("[SetService]: failed, the weid :{} does not exist", weId);
@@ -861,6 +881,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
         }
     }
 
+    // todo 根据WeIdentity DID添加认证者
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.WeIdService#delegateSetAuthentication(
      * com.webank.weid.protocol.request.SetAuthenticationArgs,

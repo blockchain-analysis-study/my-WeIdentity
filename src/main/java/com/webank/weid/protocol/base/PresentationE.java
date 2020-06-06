@@ -157,6 +157,10 @@ public class PresentationE implements RawSerializer, IProof {
     }
     
     /**
+     * 将非policy里面的Credential添加到Presentation中
+     * todo 调用 push(CredentialPojo credentialPojo)
+     *      添加完所有Credential后需要调用 commit(WeIdAuthentication weIdAuthentication)
+     *      进行重新签名，否则验证Presentation时会失败.
      * push the CredentialPojo into PresentationE.
      * @param credentialPojo the credential
      * @return true is success, others fail
@@ -177,6 +181,7 @@ public class PresentationE implements RawSerializer, IProof {
     }
     
     /**
+     * todo 提交 Credential 进行 重新签名 (文档上说 push 完之后, 必须再次调用, 否则 验证Presentation时会失败)
      * commit the credential to sign.
      * @param weIdAuthentication the authentication
      * @return true is success, others fail

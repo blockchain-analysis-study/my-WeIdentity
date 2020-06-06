@@ -50,6 +50,9 @@ import com.webank.weid.util.DateUtils;
 import com.webank.weid.util.WeIdUtils;
 
 /**
+ * TODO 凭证存证上链的相关接口。
+ *
+ * TODO 本接口提供凭证的Hash存证的生成 上链、链上查询 及 校验等操作。
  * Service implementations for operations on Evidence.
  *
  * @author chaoxinhu 2019.1

@@ -108,6 +108,8 @@ public class PresentationPolicyE extends Version implements JsonSerializer {
      *
      * todo 使用policyFileName创建 PresentationPolicyE，请确保您的classPath中有JSON文件。
      *
+     * todo PresentationPolicyE 是验证方(也就是 用人单位 自己定义的, 其将读取自己本地的配置文件)
+     *
      * create the PresentationPolicyE with policyFileName, 
      * please make sure the JSON file in your classPath.
      * 

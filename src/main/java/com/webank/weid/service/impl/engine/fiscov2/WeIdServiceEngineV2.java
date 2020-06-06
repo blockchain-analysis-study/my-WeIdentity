@@ -482,7 +482,7 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
                     BigInteger.valueOf(DateUtils.getNoMillisecondTimeStamp())
                 ).send();
             } else {
-
+                // 调用 weIdContract 合约的 createWeId() 方法
                 receipt = weIdContract.createWeId(
                     weAddress,
                     DataToolUtils.stringToByteArray(auth),

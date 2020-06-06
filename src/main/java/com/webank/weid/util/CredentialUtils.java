@@ -52,6 +52,20 @@ import com.webank.weid.protocol.request.CreateCredentialArgs;
 public final class CredentialUtils {
 
     /**
+     *
+     * todo 以Json格式连接凭据信息的所有字段, 不带证明.
+     *      计算凭据签名作为原始消息时应调用此方法.
+     *      如果凭据格式不合法, 则返回null. Json返回值满足以下格式:
+     *          1.键是按字典顺序排列的;
+     *          2.声明来自标准的 getClaimHash()以支持选择性公开;
+     *          3.紧凑的输出, 没有任何额外的空间或换行符, 以避免美化不同的Json格式.
+     *
+     *
+     *
+     *
+     *
+     *
+     *
      * Concat all fields of Credential info, without Proof, in Json format. This should be invoked
      * when calculating Credential Signature as the raw message. Return null if credential format is
      * illegal. The Json return value satisfy the following format: 1. Keys are dict-ordered; 2.
@@ -68,6 +82,7 @@ public final class CredentialUtils {
         try {
             Credential rawCredential = copyCredential(credential);
             rawCredential.setProof(null);
+            // todo 计算 Claim 中各个 filed的 总 Sha3 Hash
             return getCredentialThumbprint(rawCredential, disclosures);
         } catch (Exception e) {
             return StringUtils.EMPTY;
@@ -196,6 +211,12 @@ public final class CredentialUtils {
     }
 
     /**
+     *
+     * todo 用签名连接凭据信息的所有字段.
+     *      在计算凭据证据的凭据哈希值时应调用此方法. 如果凭据格式不合法, 则返回null.
+     *      Json返回值满足与没有签名的指纹相同的标准.
+     *
+     *
      * Concat all fields of Credential info, with signature. This should be invoked when calculating
      * credential hash value for Credential Evidence. Return null if credential format is illegal.
      * The Json return value satisfy the same standard as the thumbprint without signature.
@@ -208,8 +229,13 @@ public final class CredentialUtils {
         Credential credential,
         Map<String, Object> disclosures) {
         try {
+            // 取出各个需要算Hash 的字段, 放置到 Map 中
             Map<String, Object> credMap = DataToolUtils.objToMap(credential);
+
+            // TODO 计算Map中的各个字段Hash, 计算 Credential 各个字段的Hash
             String claimHash = getClaimHash(credential, disclosures);
+
+            // 以 “claim” => ClaimHash 的 k-v 放到 credMap 中, 并返回
             credMap.put(ParamKeyConstant.CLAIM, claimHash);
             return DataToolUtils.mapToCompactJson(credMap);
         } catch (Exception e) {
@@ -218,6 +244,8 @@ public final class CredentialUtils {
     }
 
     /**
+     *
+     * todo 获取 Claim Hash.  这与选择性披露无关
      * Get the claim hash. This is irrelevant to selective disclosure.
      *
      * @param credential Credential
@@ -226,10 +254,14 @@ public final class CredentialUtils {
      */
     public static String getClaimHash(Credential credential, Map<String, Object> disclosures) {
 
+        // 取出 Claim
         Map<String, Object> claim = credential.getClaim();
+        // 用于存放 Hash 的Claim Map (基于 取出来的 Calim 的全字段 生成)
         Map<String, Object> claimHashMap = new HashMap<>(claim);
         Map<String, Object> disclosureMap;
 
+        // 如果选择性披露 Map 为 null
+        // 则, 生成一个 标识 全部不披露的 disclosureMap
         if (disclosures == null) {
             disclosureMap = new HashMap<>(claim);
             for (Map.Entry<String, Object> entry : disclosureMap.entrySet()) {
@@ -242,13 +274,21 @@ public final class CredentialUtils {
             disclosureMap = disclosures;
         }
 
+
+        // 逐个遍历 disclosure Map
+        // 逐个
         for (Map.Entry<String, Object> entry : disclosureMap.entrySet()) {
+
+            // 逐个计算 field 的 Sha3  Hash
             claimHashMap.put(entry.getKey(), getFieldHash(claimHashMap.get(entry.getKey())));
         }
 
+        // 收集 Hash起来
         List<Map.Entry<String, Object>> list = new ArrayList<Map.Entry<String, Object>>(
             claimHashMap.entrySet()
         );
+
+        // 排个序
         Collections.sort(list, new Comparator<Map.Entry<String, Object>>() {
 
             @Override
@@ -257,6 +297,7 @@ public final class CredentialUtils {
             }
         });
 
+        // 拼接 各个 Hash 值
         StringBuffer hash = new StringBuffer();
         for (Map.Entry<String, Object> en : list) {
             hash.append(en.getKey()).append(en.getValue());
@@ -265,6 +306,7 @@ public final class CredentialUtils {
     }
 
     /**
+     * todo 计算单个 field 的 Hash值  sha3 (额, 我草, 为什么不使用  salt ??)
      * convert a field to hash.
      *
      * @param field which will be converted to hash.
@@ -419,6 +461,7 @@ public final class CredentialUtils {
     }
 
     /**
+     * todo 入参非空、格式及合法性检查
      * Check the given Credential validity based on its input params.
      *
      * @param args Credential
@@ -428,6 +471,7 @@ public final class CredentialUtils {
         if (args == null) {
             return ErrorCode.ILLEGAL_INPUT;
         }
+        // todo 入参非空、格式及合法性检查
         CreateCredentialArgs createCredentialArgs = extractCredentialMetadata(args);
         ErrorCode metadataResponseData = isCreateCredentialArgsValid(createCredentialArgs);
         if (ErrorCode.SUCCESS.getCode() != metadataResponseData.getCode()) {

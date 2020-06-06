@@ -104,10 +104,12 @@ public final class CredentialConstant {
      */
     public static final String CLAIM_POLICY_DISCLOSED_FIELD = "fieldsToBeDisclosed";
     /**
+     * todo 嵌入式 证书签名主题 的默认CPT ID（多签名支持）  cpt106
      * Default CPT ID for embedded credential signature subject (multi-sign support).
      */
     public static final Integer CREDENTIAL_EMBEDDED_SIGNATURE_CPT = 106;
     /**
+     * todo 嵌入式 credentialPojo主题 的默认CPT ID（多符号支持）  cpt107
      * Default CPT ID for embedded credentialPojo subject (multi-sign support).
      */
     public static final Integer CREDENTIALPOJO_EMBEDDED_SIGNATURE_CPT = 107;

@@ -40,6 +40,10 @@ import com.webank.weid.rpc.WeIdService;
 import com.webank.weid.util.WeIdUtils;
 
 /**
+ * todo 在WeIdentity的整体架构中，存在着可信的“授权机构”这一角色。
+ *      一般来说，授权机构特指那些广为人知的、具有一定公信力的、并且有相对频繁签发Credential需求的实体。
+ *
+ * todo 本接口提供了对这类授权签发Credential的机构的注册、移除、查询信息等操作
  * Service implementations for operations on Authority Issuer.
  *
  * @author chaoxinhu 2018.10
@@ -52,6 +56,7 @@ public class AuthorityIssuerServiceImpl extends AbstractService implements Autho
     private WeIdService weIdService = new WeIdServiceImpl();
 
     /**
+     * todo 这是一个需要权限的操作，目前只有合约的部署者（一般为SDK）才能正确执行
      * Register a new Authority Issuer on Chain.
      *
      * @param args the args
@@ -73,6 +78,7 @@ public class AuthorityIssuerServiceImpl extends AbstractService implements Autho
     }
 
     /**
+     * todo 这是一个需要权限的操作，目前只有合约的部署者（一般为SDK）才能正确执行
      * Remove a new Authority Issuer on Chain.
      *
      * @param args the args
@@ -95,6 +101,7 @@ public class AuthorityIssuerServiceImpl extends AbstractService implements Autho
     }
 
     /**
+     * todo 根据WeIdentity DID判断是否为权威机构
      * Check whether the given weId is an authority issuer.
      *
      * @param weId the WeIdentity DID
@@ -116,6 +123,7 @@ public class AuthorityIssuerServiceImpl extends AbstractService implements Autho
     }
 
     /**
+     * todo 根据WeIdentity DID查询权威机构信息
      * Query the authority issuer information given weId.
      *
      * @param weId the WeIdentity DID
@@ -135,6 +143,7 @@ public class AuthorityIssuerServiceImpl extends AbstractService implements Autho
     }
 
     /**
+     * todo 查询指定范围内的issuer列表
      * Get all of the authority issuer.
      *
      * @param index start position
@@ -167,7 +176,8 @@ public class AuthorityIssuerServiceImpl extends AbstractService implements Autho
     }
 
     /**
-     *
+     * todo 指定并注册不同issuer的类型，如学校、政府机构等
+     * todo 本方法对传入的WeIdAuthentication没有特定权限要求
      * 注册一个新的 发行者的 类型
      * Register a new issuer type.
      *
@@ -200,6 +210,8 @@ public class AuthorityIssuerServiceImpl extends AbstractService implements Autho
 
 
     /**
+     * todo 向指定的issuerType中添加成员
+     *      方法的调用者至少需要是Authority Issuer才能成功
      * Marked an issuer as the specified issuer type.
      *
      * @param callerAuth the caller who have the access to modify this list
@@ -228,6 +240,7 @@ public class AuthorityIssuerServiceImpl extends AbstractService implements Autho
     }
 
     /**
+     * todo 移除指定issuerType里面的WeId成员
      * Removed an issuer from the specified issuer list.
      *
      * @param callerAuth the caller who have the access to modify this list
@@ -258,6 +271,7 @@ public class AuthorityIssuerServiceImpl extends AbstractService implements Autho
     }
 
     /**
+     * todo 判断issuer是否为指定机构里面的成员
      * Check if the given WeId is belonging to a specific issuer type.
      *
      * @param issuerType the issuer type
@@ -285,6 +299,7 @@ public class AuthorityIssuerServiceImpl extends AbstractService implements Autho
     }
 
     /**
+     * todo 获取指定索引范围内的issuer列表
      * Get all specific typed issuer in a list.
      *
      * @param issuerType the issuer type

@@ -70,6 +70,7 @@ import com.webank.weid.util.WeIdUtils;
 
 
 /**
+ * todo 本接口提供AMOP的请求和注册
  * Created by Junqi Zhang on 2019/4/10.
  */
 public class AmopServiceImpl extends BaseService implements AmopService {

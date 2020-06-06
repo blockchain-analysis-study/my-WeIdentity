@@ -37,6 +37,7 @@ public class CreateWeIdArgs {
     private String publicKey;
 
     /**
+     * 后期鉴权使用
      * Required: WeIdentity DID private key.
      */
     private WeIdPrivateKey weIdPrivateKey;

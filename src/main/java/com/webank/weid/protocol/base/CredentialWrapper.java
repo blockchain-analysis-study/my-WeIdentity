@@ -41,15 +41,19 @@ public class CredentialWrapper implements Hashable {
     /**
      *
      * TODO 基本的 Credential类, 注意: 不是对外的 CredentialPojo 哦
+     *
+     * todo 其中的 Claim 字段上的 值, 可以是 全披露的/ 也可以是 选择性披露的
      * Required: The Credential.
      */
     private Credential credential;
 
     /**
      *
-     * 披露字段
+     * todo 选择披露字段
      * Required: key is the credential field, and value "1" for disclosure to the third party, "0"
      * for no disclosure.
+     *
+     * todo 必填：键是凭据字段，值“ 1”用于向第三方公开，“ 0”用于不公开
      */
     private Map<String, Object> disclosure;
 
