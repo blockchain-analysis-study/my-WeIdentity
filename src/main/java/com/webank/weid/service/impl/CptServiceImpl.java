@@ -202,6 +202,8 @@ public class CptServiceImpl extends AbstractService implements CptService {
             String weId = args.getWeIdAuthentication().getWeId();
             WeIdPrivateKey weIdPrivateKey = args.getWeIdAuthentication().getWeIdPrivateKey();
             String cptJsonSchemaNew = this.cptSchemaToString(args);
+
+            // 注册 CPT 时需要签名
             RsvSignature rsvSignature = sign(
                 weId,
                 cptJsonSchemaNew,
@@ -242,6 +244,8 @@ public class CptServiceImpl extends AbstractService implements CptService {
             String weId = args.getWeIdAuthentication().getWeId();
             WeIdPrivateKey weIdPrivateKey = args.getWeIdAuthentication().getWeIdPrivateKey();
             String cptJsonSchemaNew = this.cptSchemaToString(args);
+
+            // todo 注册 CPT 的时候需要签名
             RsvSignature rsvSignature = sign(
                 weId,
                 cptJsonSchemaNew,
@@ -340,6 +344,8 @@ public class CptServiceImpl extends AbstractService implements CptService {
             String weId = args.getWeIdAuthentication().getWeId();
             WeIdPrivateKey weIdPrivateKey = args.getWeIdAuthentication().getWeIdPrivateKey();
             String cptJsonSchemaNew = this.cptSchemaToString(args);
+
+            // todo 更新 CPT 的时候 需要签名
             RsvSignature rsvSignature = sign(
                 weId,
                 cptJsonSchemaNew,
@@ -362,15 +368,16 @@ public class CptServiceImpl extends AbstractService implements CptService {
     }
 
 
+    // TODO 对 CPT 的一些元数据数据做了 签名
     private RsvSignature sign(
         String cptPublisher,
         String jsonSchema,
         WeIdPrivateKey cptPublisherPrivateKey) {
 
         StringBuilder sb = new StringBuilder();
-        sb.append(cptPublisher);
-        sb.append(WeIdConstant.PIPELINE);
-        sb.append(jsonSchema);
+        sb.append(cptPublisher);            // 发布者 WeId
+        sb.append(WeIdConstant.PIPELINE);   // ”|“
+        sb.append(jsonSchema);              // JsonSchema
         SignatureData signatureData =
             DataToolUtils.signMessage(sb.toString(), cptPublisherPrivateKey.getPrivateKey());
         return DataToolUtils.convertSignatureDataToRsv(signatureData);

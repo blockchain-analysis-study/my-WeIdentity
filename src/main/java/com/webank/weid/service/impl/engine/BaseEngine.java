@@ -34,12 +34,15 @@ public abstract class BaseEngine extends BaseService {
 
     private static final Logger logger = LoggerFactory.getLogger(BaseEngine.class);
 
+    // todo 根据 合约地址 和 一个系统的 Credential (这里面就是一个 私钥对应的ECKeyPair 和 一个 私钥对应的 Address)
     private static <T> T loadContract(
         String contractAddress,
         Object credentials,
         Class<T> cls) throws NoSuchMethodException, IllegalAccessException,
         InvocationTargetException {
         Object contract;
+
+        // 反射模式 加载
         Method method = cls.getMethod(
             "load",
             String.class,
@@ -49,6 +52,7 @@ public abstract class BaseEngine extends BaseService {
             BigInteger.class
         );
 
+        // 加载 对应的合约实例
         contract = method.invoke(
             null,
             contractAddress,
@@ -61,6 +65,8 @@ public abstract class BaseEngine extends BaseService {
     }
 
     /**
+     *
+     * TODO 加载合约实例, 根据 合约Address、发送人的privateKey, 合约Class
      * Reload contract.
      *
      * @param contractAddress the contract address
