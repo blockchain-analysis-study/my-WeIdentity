@@ -47,13 +47,15 @@ public abstract class AbstractJsonTransportation
     
     private static final Logger logger =
         LoggerFactory.getLogger(AbstractJsonTransportation.class);
-    
+
+    // todo 指定transportation的认证者,用于权限控制
     @Override
     public JsonTransportation specify(List<String> verifierWeIdList) {
         this.setVerifier(verifierWeIdList);
         return this;
     }
-    
+
+    // todo 用于序列化对象,要求对象实现JsonSerializer接口
     @Override
     public <T extends JsonSerializer> ResponseData<String> serialize(
         WeIdAuthentication weIdAuthentication, 

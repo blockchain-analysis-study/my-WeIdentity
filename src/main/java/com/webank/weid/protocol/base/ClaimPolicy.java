@@ -32,5 +32,6 @@ public class ClaimPolicy {
     // 一系列当前 Claim 中需要被披露的字段名
     //
     // jsonStr 格式
+    //      {"name":1,"gender":0,"age":1}   0: 不披露,  1: 披露
     private String fieldsToBeDisclosed;
 }

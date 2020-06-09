@@ -81,6 +81,33 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
      * todo 创建一个 Credential 的封装 (CredentialWrapper) 其中包含了 Credential 基础信息 和 disclosure 选择披露信息
      * Generate a credential.
      *
+     *
+     * {
+     *      "claim":{
+     *          "age":18,
+     *          "gender":"F",
+     *          "name":"zhangsan"
+     *      },
+     *      "context":"https://github.com/WeBankFinTech/WeIdentity/blob/master/context/v1",
+     *      "cptId":2000082,
+     *      "expirationDate":1588776752,
+     *      "id":"0d633260-d31c-4155-b79d-a9eb67df7bab",
+     *      "issuanceDate":1588065179,
+     *      "issuer":"did:weid:101:0x9bd9897fcdb98428f7b152ce8a06cb16758ccd17",
+     *      "proof":{
+     *          "created":1588065179,
+     *          "creator":"did:weid:101:0x9bd9897fcdb98428f7b152ce8a06cb16758ccd17#keys-0",
+     *          "signatureValue":"G51huya0Q4Nz4HGa+dUju3GVrR0ng+atlXeouEKe60ImLMl6aihwZsSGExOgC8KwP3sUjeiggdba3xjVE9SSI/g=",
+     *          "type":"Secp256k1"
+     *      },
+     *      "type":[
+     *          "VerifiableCredential",
+     *          "original"
+     *      ]
+     *  }
+     *
+     *
+     *
      * @param args the args
      * @return the Credential response data
      */
@@ -167,7 +194,9 @@ public class CredentialServiceImpl extends BaseService implements CredentialServ
 
     /**
      *
-     * todo 多签，在原凭证列表的基础上，创建包裹成一个新的多签凭证，由传入的私钥所签名。此凭证的CPT为一个固定值。在验证一个多签凭证时，会迭代验证其包裹的所有子凭证。本接口不支持创建选择性披露的多签凭证。
+     * todo 多签，在原凭证列表的基础上，创建包裹成一个新的多签凭证，由传入的私钥所签名。
+     *      此凭证的CPT为一个固定值。在验证一个多签凭证时，会迭代验证其包裹的所有子凭证。
+     *      本接口不支持创建选择性披露的多签凭证。
      *
      * Add an extra signer and signature to a Credential. Multiple signatures will be appended in an
      * embedded manner.

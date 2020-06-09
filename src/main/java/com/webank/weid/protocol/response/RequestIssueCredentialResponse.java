@@ -40,7 +40,7 @@ public class RequestIssueCredentialResponse {
     protected String errorMessage;
     private CredentialPojo credentialPojo;  // todo 颁发的 Credential 实例
     private String credentialSignature;
-    private String issuerNonce;
+    private String issuerNonce;             // issuer 返回的 随机数
     /**
      * 错误码.
      */

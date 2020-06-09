@@ -1099,6 +1099,10 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     }
 
 
+    // todo 根据传入的claim对象生成Credential (注意, 这个不传 Salt)
+    //
+    // todo 需要自己算 slat算出 salt
+    //
     // todo 依赖外部入参 构造 Credential
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.CredentialPojoService#createCredential(
@@ -1185,7 +1189,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
 
 
             // todo 否则, ...
-            Map<String, Object> saltMap = DataToolUtils.clone(claimMap); // 算出 salt
+            Map<String, Object> saltMap = DataToolUtils.clone(claimMap); // todo 需要自己算 slat算出 salt
             generateSalt(saltMap, null);
             String rawData = CredentialPojoUtils
                 .getCredentialThumbprintWithoutSig(result, saltMap, null);
@@ -1234,8 +1238,99 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     }
 
     /**
+     * TODO 多签，在原凭证 (Credential) 列表的基础上，创建包裹成一个新的多签凭证 (Muti-sign Credential)，由传入的私钥所签名。
+     *      此凭证的CPT为一个固定值 (106 或者 107 ??)。【在验证一个多签凭证时，会迭代验证其包裹的所有子凭证】。
+     *      本接口【不支持】创建选【择性披露的多签凭证】。
+     *
      * Add an extra signer and signature to a Credential. Multiple signatures will be appended in an
      * embedded manner.
+     *
+     * TODO 向凭据 (Credential) 添加 额外的签名者和签名。 多个签名将以嵌入方式添加
+     *
+     *
+     *  {
+     *      "claim": {
+     *        "credentialList": [
+     *          {
+     *            "claim": {
+     *              "age": 1,
+     *              "gender": "F",
+     *              "id": "did:weid:1000:1:0xa4c2666560499868baf1906941f806b6d1c26e33",
+     *              "name": "1"
+     *            },
+     *            "context": "https:\/\/github.com\/WeBankFinTech\/WeIdentity\/blob\/master\/context\/v1",
+     *            "cptId": 2000087,
+     *            "expirationDate": 1567491752,
+     *            "id": "6ea6e209-10e9-4a93-b6be-12af1a32655b",
+     *            "issuanceDate": 1567405352,
+     *            "issuer": "did:weid:1000:1:0xa4c2666560499868baf1906941f806b6d1c26e33",
+     *            "proof": {
+     *              "created": 1567405352,
+     *              "creator": "did:weid:1000:1:0xa4c2666560499868baf1906941f806b6d1c26e33#keys-0",
+     *              "salt": {
+     *                "age": "yOwN7",
+     *                "gender": "jjB85",
+     *                "id": "BmRYI",
+     *                "name": "BjYqF"
+     *              },
+     *              "signatureValue": "G+SNG3rBZNDvRNgRtJugPtX1FmE8XJIkV4CGPK\/nt\/breIPMJ5wYxImTp2QAxBUe5HMwCe9PPGhhMJJAazM5u9k=",
+     *              "type": "Secp256k1"
+     *            },
+     *            "type": [
+     *              "VerifiableCredential"
+     *            ]
+     *          },
+     *          {
+     *            "claim": {
+     *              "age": 1,
+     *              "gender": "F",
+     *              "id": "did:weid:1000:1:0x309320a01f215a380c6950e80a89181ad8a8cd53",
+     *              "name": "1"
+     *            },
+     *            "context": "https:\/\/github.com\/WeBankFinTech\/WeIdentity\/blob\/master\/context\/v1",
+     *            "cptId": 2000087,
+     *            "expirationDate": 1567491842,
+     *            "id": "a3544a9c-6cb6-4688-9622-bb935fb0d93f",
+     *            "issuanceDate": 1567405355,
+     *            "issuer": "did:weid:1000:1:0x309320a01f215a380c6950e80a89181ad8a8cd53",
+     *            "proof": {
+     *              "created": 1567405355,
+     *              "creator": "did:weid:1000:1:0x309320a01f215a380c6950e80a89181ad8a8cd53#keys-0",
+     *              "salt": {
+     *                "age": "5nImi",
+     *                "gender": "Me224",
+     *                "id": "5pYs2",
+     *                "name": "z6VmW"
+     *              },
+     *              "signatureValue": "HC8OAG\/dRmteGSIGWIDekp8fC1KJI8EEDZBb29HiTLXvVj350l9yTOHeGSBCr2VRY\/DSHT5ONjlvcrO4Mqa3Auo=",
+     *              "type": "Secp256k1"
+     *            },
+     *            "type": [
+     *              "VerifiableCredential"
+     *            ]
+     *          }
+     *        ]
+     *      },
+     *      "context": "https:\/\/github.com\/WeBankFinTech\/WeIdentity\/blob\/master\/context\/v1",
+     *      "cptId": 107,
+     *      "expirationDate": 1567491842,
+     *      "id": "ad5d5a54-4574-4b3b-b1df-9d0687b6a0ac",
+     *      "issuanceDate": 1567405359,
+     *      "issuer": "did:weid:1000:1:0x4e9a111867ed6370e1e23f7a79426f6649eb78c6",
+     *      "proof": {
+     *        "created": 1567405359,
+     *        "creator": "did:weid:1000:1:0x4e9a111867ed6370e1e23f7a79426f6649eb78c6#keys-0",
+     *        "salt": {
+     *          "credentialList": ""
+     *        },
+     *        "signatureValue": "HC1y3rfyb\/2sg+E2Uulczm8VDtmQ6VrU\/9ow4e4nP3lVUOv4Gz41pfBrJHnV4wQoUbQsCYpezFx5sdaUwUILV1I=",
+     *        "type": "Secp256k1"
+     *      },
+     *      "type": [
+     *        "VerifiableCredential"
+     *      ]
+     *    }
+     *
      *
      * @param credentialList original credential list
      * @param callerAuth the passed-in privateKey and WeID bundle to sign
@@ -1348,7 +1443,13 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
      *          com.webank.weid.protocol.base.ClaimPolicy
      *      )
      */
+    // todo 通过 原始凭证 和 披露策略 ，创建选择性披露的Credential
+    //
+    // todo 从外面 传进来的  salt
+    //
     // todo 生成选择性披露的 Credential
+    //
+    // todo 对于已经创建好的选择性披露凭证，不允许再次进行选择性披露
     @Override
     public ResponseData<CredentialPojo> createSelectiveCredential(
         CredentialPojo credential,
@@ -1448,9 +1549,15 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     }
 
     /**
+     * TODO 传入CredentialPojo信息生成CredentialPojo整体的Hash值，一般在生成Evidence时调用
+     *
      * Get the full hash value of a CredentialPojo. All fields in the CredentialPojo will be
      * included. This method should be called when creating and verifying the Credential Evidence
      * and the result is selectively-disclosure irrelevant.
+     *
+     * TODO 获取CredentialPojo的完整 Hash。
+     *      CredentialPojo中的【所有字段】都将包括在内。
+     *      【创建】和 【验证】 Evidence 时应调用此方法，【并且结果与选择披露无关】.
      *
      * @param credentialPojo the args
      * @return the Credential Hash value
@@ -1466,6 +1573,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             ErrorCode.SUCCESS);
     }
 
+    // todo 验证credential
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.CredentialPojoService#verify(
      *          java.lang.String,
@@ -1500,6 +1608,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         return new ResponseData<Boolean>(true, ErrorCode.SUCCESS);
     }
 
+
+    // todo 使用 指定公钥验证credentialWrapper
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.CredentialPojoService#verify(
      *          com.webank.weid.protocol.base.CredentialPojo,
@@ -1577,6 +1687,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                     }
                 }
                 //verify credential
+                //
+                // TODO 如果是支持 零知识 证明的 Credential 的话
                 if (isZkpCredential(credential)) {
                     return verifyZkpCredential(credential);
 
@@ -1621,6 +1733,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         return new ResponseData<Boolean>(true, ErrorCode.SUCCESS);
     }
 
+    // todo 验证由PDF Transportation传输的Presentation
+    //
     @Override
     public ResponseData<Boolean> verifyPresentationFromPdf(
         String pdfTemplatePath,
@@ -2113,8 +2227,111 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     }
 
     /**
+     * TODO 使用第 三方可信时间戳 服务，创建一个可信时间戳凭证
+     *
+     *
+     * TODO 注意: 本服务需要您先行配置好时间戳服务的相关参数，请参见时间戳服务配置步骤.
+     *      当前，可信时间戳服务支持使用 WeSign（微鉴证）集成.
+     *
+     *
+     * TODO 注意: 创建可信时间戳凭证的输入参数是一个 凭证 list。 (Credential List)
+     *      当前，因为一些技术限制，还不支持对 **已经选择性披露的凭证** 进行可信时间戳的创建。
+     *      也就是说，如果您传入的 凭证list里面有任何一个凭证是选择性披露的，那么创建将会失败.
+     *
+     *
+     * TODO 注意: 对于已经创建好的可信时间戳凭证，您可以通过调用 createSelectiveCredential 对其进行选择性披露.
+     *
      * Create a trusted timestamp credential.
      *
+     *
+     * {
+     *      "claim": {
+     *        "credentialList": [
+     *          {
+     *            "claim": {
+     *              "age": 1,
+     *              "gender": "F",
+     *              "id": "did:weid:1000:1:0xa4c2666560499868baf1906941f806b6d1c26e33",
+     *              "name": "1"
+     *            },
+     *            "context": "https:\/\/github.com\/WeBankFinTech\/WeIdentity\/blob\/master\/context\/v1",
+     *            "cptId": 2000087,
+     *            "expirationDate": 1567491752,
+     *            "id": "6ea6e209-10e9-4a93-b6be-12af1a32655b",
+     *            "issuanceDate": 1567405352,
+     *            "issuer": "did:weid:1000:1:0xa4c2666560499868baf1906941f806b6d1c26e33",
+     *            "proof": {
+     *              "created": 1567405352,
+     *              "creator": "did:weid:1000:1:0xa4c2666560499868baf1906941f806b6d1c26e33#keys-0",
+     *              "salt": {
+     *                "age": "yOwN7",
+     *                "gender": "jjB85",
+     *                "id": "BmRYI",
+     *                "name": "BjYqF"
+     *              },
+     *              "signatureValue": "G+SNG3rBZNDvRNgRtJugPtX1FmE8XJIkV4CGPK\/nt\/breIPMJ5wYxImTp2QAxBUe5HMwCe9PPGhhMJJAazM5u9k=",
+     *              "type": "Secp256k1"
+     *            },
+     *            "type": [
+     *              "VerifiableCredential"
+     *            ]
+     *          },
+     *          {
+     *            "claim": {
+     *              "age": 1,
+     *              "gender": "F",
+     *              "id": "did:weid:1000:1:0x309320a01f215a380c6950e80a89181ad8a8cd53",
+     *              "name": "1"
+     *            },
+     *            "context": "https:\/\/github.com\/WeBankFinTech\/WeIdentity\/blob\/master\/context\/v1",
+     *            "cptId": 2000087,
+     *            "expirationDate": 1567491842,
+     *            "id": "a3544a9c-6cb6-4688-9622-bb935fb0d93f",
+     *            "issuanceDate": 1567405355,
+     *            "issuer": "did:weid:1000:1:0x309320a01f215a380c6950e80a89181ad8a8cd53",
+     *            "proof": {
+     *              "created": 1567405355,
+     *              "creator": "did:weid:1000:1:0x309320a01f215a380c6950e80a89181ad8a8cd53#keys-0",
+     *              "salt": {
+     *                "age": "5nImi",
+     *                "gender": "Me224",
+     *                "id": "5pYs2",
+     *                "name": "z6VmW"
+     *              },
+     *              "signatureValue": "HC8OAG\/dRmteGSIGWIDekp8fC1KJI8EEDZBb29HiTLXvVj350l9yTOHeGSBCr2VRY\/DSHT5ONjlvcrO4Mqa3Auo=",
+     *              "type": "Secp256k1"
+     *            },
+     *            "type": [
+     *              "VerifiableCredential"
+     *            ]
+     *          }
+     *        ],
+     *      "timestampAuthority": "wesign",
+     *      "authoritySignature": "MhmbHC1y3rfyb\/2sg+E2Uulczm8VDtmQ6VrU\/9ow4e4nP3lVUOv4Gz41pfBrJHnV4wQoUbQsCYpezFx5sdaUwUILV1I=HC1y3rfyb\/2sg+E2Uulczm8VDtmQ6VrU\/9ow4e4nP3lVUOv4Gz41pfBrJHnV4wQoUbQsCYpezFx5sdaUwUILV1I=HC1y3rfyb\/2sg+E2Uulczm8VDtmQ6VrU\/9ow4e4nP3lVUOv4Gz41pfBrJHnV4wQoUbQsCYpezFx5sdaUwUILV1I=a235==",
+     *      "timestamp": 151233113000,
+     *      "claimHash": "0xe3f48648beee61d17de609d32af36ac0bf4d68a9352890b04d53841c4949bd13"
+     *      },
+     *      "context": "https:\/\/github.com\/WeBankFinTech\/WeIdentity\/blob\/master\/context\/v1",
+     *      "cptId": 108,
+     *      "expirationDate": 1567491842,
+     *      "id": "ad5d5a54-4574-4b3b-b1df-9d0687b6a0ac",
+     *      "issuanceDate": 1567405359,
+     *      "issuer": "did:weid:1000:1:0x4e9a111867ed6370e1e23f7a79426f6649eb78c6",
+     *      "proof": {
+     *        "created": 1567405359,
+     *        "creator": "did:weid:1000:1:0x4e9a111867ed6370e1e23f7a79426f6649eb78c6#keys-0",
+     *        "salt": {
+     *          "credentialList": ""
+     *        },
+     *        "signatureValue": "HC1y3rfyb\/2sg+E2Uulczm8VDtmQ6VrU\/9ow4e4nP3lVUOv4Gz41pfBrJHnV4wQoUbQsCYpezFx5sdaUwUILV1I=",
+     *        "type": "Secp256k1"
+     *      },
+     *      "type": [
+     *        "VerifiableCredential"
+     *      ]
+     *    }
+     *
+     * TODO 可信时间 凭证 是一个, 【对某个 Credential 生成全部不披露的凭证并生成hash, 然后根据Hash 和时间戳再生成的一个 Credential ??】
      * @param credentialList the credentialPojo list to be signed
      * @param weIdAuthentication the caller authentication
      * @return the embedded timestamp in credentialPojo
@@ -2179,6 +2396,9 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         return new ResponseData<>(credential, ErrorCode.SUCCESS);
     }
 
+    // todo 此接口仅在使用 `WeDPR` 的选择性披露时才需要调用，用于生成一些中间数据。
+    //      用户根据传入的preCredential，
+    //      claimJson以及weIdAuthentication生成基于系统CPT 111的credential。
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.CredentialPojoService#prepareZKPCredential(
      * com.webank.weid.protocol.base.CredentialPojo, java.lang.Object)
@@ -2186,7 +2406,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     @Override
     public ResponseData<CredentialPojo> prepareZkpCredential(
         CredentialPojo preCredential,           // 还未形成 Credential 的一些预热信息
-        String claimJson,                       // 入参的 用来生成 Credential 的Claim 部分 (不是最终的Claim, 里面有些字段需要放到外面的Credential 中)
+        String claimJson,                       // (用户填入的 Claim) 入参的 用来生成 Credential 的Claim 部分 (不是最终的Claim, 里面有些字段需要放到外面的Credential 中)
         WeIdAuthentication weIdAuthentication   // 认证方式, 该类只有三个字段   WeId/PubKey/PriKey
     ) {
 
@@ -2211,7 +2431,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
 
         //3. generate credential based on CPT 111 and userResult.
         //
-        // 根据CPT 111和userResult生成凭据。
+        // 根据CPT 111和userResult生成凭据。 todo 这里用到了 随机 salt
         return generateCpt111Credential(weIdAuthentication, cptId, userResult);
     }
 
@@ -2395,6 +2615,46 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         }
     }
 
+    // TODO 根据传入的 授权要求信息，生成符合 CPT101 格式规范的【数据授权凭证】。
+    //      该凭证需要被 verify之后 和 Endpoint Service结合使用.
+    //
+    //
+    // TODO 注意：使用这个接口的前提是首先需要将CPT 101注册到链上。
+    //      如果您是新搭了一条WeIdentity 1.6.0+的链，那么搭链过程中这一步已经自动完成了。
+    //      否则（如您是升级SDK），您需要使用部署WeIdentity合约的私钥（ecdsa_key）去将CPT 101注册到链上。
+    //      下文的代码范例中我们给出了详细的流程.
+    //
+    //
+    // {
+    //        "claim": {
+    //            "duration": 360000,
+    //            "fromWeId": "did:weid:101:0x69cd071e4be5fd878e1519ff476563dc2f4c6168",
+    //            "resourceId": "4b077c17-9612-42ee-9e36-3a3d46b27e81",
+    //            "serviceUrl": "http://127.0.0.1:6010/fetch-data",
+    //            "toWeId": "did:weid:101:0x68bedb2cbe55b4c8e3473faa63f121c278f6dba9"
+    //        },
+    //        "context": "https://github.com/WeBankFinTech/WeIdentity/blob/master/context/v1",
+    //        "cptId": 101,
+    //        "expirationDate": 1581347039,
+    //        "id": "48b75424-9411-4d22-b925-4e730b445a31",
+    //        "issuanceDate": 1580987039,
+    //        "issuer": "did:weid:101:0x69cd071e4be5fd878e1519ff476563dc2f4c6168",
+    //        "proof": {
+    //            "created": 1580987039,
+    //            "creator": "did:weid:101:0x69cd071e4be5fd878e1519ff476563dc2f4c6168#keys-0",
+    //            "salt": {
+    //                "duration": "fmk5A",
+    //                "fromWeId": "DEvFy",
+    //                "resourceId": "ugVeN",
+    //                "serviceUrl": "nVdeE",
+    //                "toWeId": "93Z1E"
+    //            },
+    //            "signatureValue": "HCZwyTzGst87cjCDaUEzPrO8QRlsPvCYXvRTUVBUTDKRSoGDgu4h4HLrMZ+emDacRnmQ/yke38u1jBnilNnCh6c=",
+    //            "type": "Secp256k1"
+    //        },
+    //        "type": ["VerifiableCredential", "hashTree"]
+    //    }
+    //
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.CredentialPojoService#createDataAuthToken()
      */

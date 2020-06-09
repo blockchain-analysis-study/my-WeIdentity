@@ -94,7 +94,8 @@ public class AmopServiceImpl extends BaseService implements AmopService {
         }
         return dataDriver;
     }
-
+    // TODO 通过AMOP获取 Policy 和 Challenge
+    //
     // todo 向 IV 发起请求一个 Challenge 和 Policy
     @Override
     public ResponseData<PolicyAndChallenge> getPolicyAndChallenge(
@@ -151,6 +152,7 @@ public class AmopServiceImpl extends BaseService implements AmopService {
     }
 
     /**
+     * todo  AMOP请求Server
      * 发送普通消息的AMOP请求接口.
      */
     public ResponseData<AmopResponse> request(String toOrgId, AmopCommonArgs args) {
@@ -166,6 +168,7 @@ public class AmopServiceImpl extends BaseService implements AmopService {
     }
 
     /**
+     * todo 通过AMOP获取密钥数据
      * 通过AMOP获取秘钥请求接口.
      */
     public ResponseData<GetEncryptKeyResponse> getEncryptKey(String toOrgId,
@@ -182,6 +185,7 @@ public class AmopServiceImpl extends BaseService implements AmopService {
     }
 
     /**
+     * TODO 注册AMOP回调处理
      * 注册回调函数接口.
      */
     public void registerCallback(Integer directRouteMsgType, AmopCallback directRouteCallback) {
@@ -189,7 +193,39 @@ public class AmopServiceImpl extends BaseService implements AmopService {
     }
 
     /**
+     * TODO 通过AMOP获取 PolicyAndChallenge 和 preCredential,
+     *      【在用户向issuer请求发 `zkp类型` 的credential时调用】.
      * request PolicyAndPreCredential.
+     *
+     *
+     * :header-rows: 1
+     *
+     * * - 名称
+     *   - 类型
+     *   - 说明
+     *   - 备注
+     * * - errorCode
+     *   - Integer
+     *   - 返回结果码
+     *   -
+     * * - errorMessage
+     *   - String
+     *   - 返回结果描述
+     *   -
+     * * - result
+     *   - PolicyAndChallenge
+     *   -
+     *   - 业务数据
+     * * - preCredential
+     *   - CredentialPojo
+     *   -
+     *   - 基于CPT 110的元数据的Credential
+     * * - extra
+     *   - Map
+     *   -
+     *   - 附加信息
+     *
+     *
      *
      * @param toOrgId toOrgId
      * @param args args
@@ -212,7 +248,61 @@ public class AmopServiceImpl extends BaseService implements AmopService {
 
     // todo 请求发布 Credential
     //
-    // todo 这个是 用户本地自己生成 Credential 和 presentation, 并将 Credential 提供给 issuer 做 盲签并返回签名后的 Credential 信息
+    // TODO 通过AMOP获取zkp类型的Credential，
+    //      【在用户向issuer请求发 `zkp类型的credential` 时调用】
+    //
+    // TODO 入参:
+    //header-rows: 1
+    //
+    //* - 名称
+    //  - 类型
+    //  - 说明
+    //  - 备注
+    //* - policyAndChallenge
+    //  - PolicyAndChallenge
+    //  -
+    //  - 业务数据
+    //* - preCredential
+    //  - CredentialPojo
+    //  -
+    //  - 基于CPT 110的元数据的Credential
+    //* - extra
+    //  - Map
+    //  -
+    //  - 附加信息
+    //
+    // TODO 返参:
+    //
+    //header-rows: 1
+    //
+    //* - 名称
+    //  - 类型
+    //  - 说明
+    //  - 备注
+    //* - errorCode
+    //  - Integer
+    //  - 返回结果码
+    //  -
+    //* - errorMessage
+    //  - String
+    //  - 返回结果描述
+    //  -
+    //* - credentialPojo
+    //  - CredentialPojo
+    //  -
+    //  - 业务数据
+    //* - credentialSignature
+    //  - String
+    //  -
+    //  - credential的签名
+    //* - issuerNonce
+    //  - String
+    //  -
+    //  - issuer提供的随机数
+    //
+    //
+    // todo 这个是 用户本地自己生成 Credential 和 presentation,
+    //      并将 Credential 提供给 issuer 做 盲签并返回签名后的 Credential 信息.
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.AmopService#requestIssueCredential(java.lang.String,
      * com.webank.weid.protocol.amop.RequestIssueCredentialArgs)
