@@ -102,7 +102,7 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
      * @return Evidence address
      */
     @Override
-    public ResponseData<String> createEvidence(Hashable object, WeIdPrivateKey weIdPrivateKey) {
+    public ResponseData<String> createEvidence (Hashable object, WeIdPrivateKey weIdPrivateKey) {
 
         // todo Hashable 分别被 Credential 和 CredentialPojo 和 CredentialWrapper 和 HashString  四个实现
         // 先获取 obj 的Hash
@@ -245,6 +245,9 @@ public class EvidenceServiceImpl extends AbstractService implements EvidenceServ
             return new ResponseData<>(StringUtils.EMPTY, ErrorCode.ILLEGAL_INPUT);
         }
         try {
+
+            // 计算出 obj 的Hash,
+            // CredentialPojo 的话 是自带 salt 的Claim Hash
             String hashValue = object.getHash();
             if (StringUtils.isEmpty(hashValue)) {
                 return new ResponseData<>(StringUtils.EMPTY, ErrorCode.ILLEGAL_INPUT);

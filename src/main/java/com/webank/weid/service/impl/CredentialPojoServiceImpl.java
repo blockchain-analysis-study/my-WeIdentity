@@ -88,7 +88,9 @@ import com.webank.weid.util.WeIdUtils;
 
 /**
  *
- * TODO 凭证签发相关功能的核心接口。 (和 CredentialServiceImpl 一起)
+ * TODO 凭证签发相关功能的核心接口。 (而 CredentialServiceImpl 后续作废)
+ *
+ * TODO 新版都用这个 生成 Credential
  *
  * todo 本接口提供凭证的签发和验证操作、Verifiable Presentation的签发和验证操作。
  *
@@ -160,19 +162,23 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                 }
             } else {
                 if (fixed == null) {
+                    // 添加 随机 salt
                     addSalt(entry);
                 } else {
+                    // 添加 指定 salt
                     entry.setValue(fixed);
                 }
             }
         }
     }
 
+    // TODO 添加 随机 salt 到 Entry 中
     private static void addSalt(Map.Entry<String, Object> entry) {
         String salt = DataToolUtils.getRandomSalt();
         entry.setValue(salt);
     }
 
+    // 给 [] 类型的 field 生成对应的 salt
     private static boolean generateSaltFromList(List<Object> objList, Object fixed) {
         List<Object> list = (List<Object>) objList;
         for (Object obj : list) {
@@ -191,7 +197,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     }
 
     /**
-     * 校验claim、salt和disclosureMap的格式是否一致.
+     * todo 校验claim、salt和disclosureMap的格式是否一致.
      */
     private static boolean validCredentialMapArgs(Map<String, Object> claim,
         Map<String, Object> salt, Map<String, Object> disclosureMap) {
@@ -772,12 +778,24 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         }
     }
 
+
+    // TODO 【重要, 校验 零知识证明Credential】
+    //
+    // todo 校验零知识证明的Credential
     private static ResponseData<Boolean> verifyZkpCredential(CredentialPojo credential) {
 
+        // 拿到 Credential 中的 Proof
         Map<String, Object> proof = credential.getProof();
+
+        // 获取 `encodedVerificationRule` 的值
         String encodedVerificationRule = (String) proof
             .get(ParamKeyConstant.PROOF_ENCODEDVERIFICATIONRULE);
+
+        // 获取 `verificationRequest` 的值
         String verificationRequest = (String) proof.get(ParamKeyConstant.PROOF_VERIFICATIONREQUEST);
+
+        // todo 调用远端 根据 `encodedVerificationRule` 的值 和 `verificationRequest` 的值
+        //      获取 verifierResult
         VerifierResult verifierResult =
             VerifierClient.verifyProof(encodedVerificationRule, verificationRequest);
         if (verifierResult.wedprErrorMessage == null) {
@@ -787,6 +805,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         return new ResponseData<Boolean>(false, ErrorCode.CREDENTIAL_ERROR);
     }
 
+    // 是否是 zkp Credential
     private static Boolean isZkpCredential(CredentialPojo credential) {
 
         List<String> types = credential.getType();
@@ -917,9 +936,9 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     }
 
     private static void processZkpPolicy(
-        ClaimPolicy claimPolicy,
-        List<String> revealedAttributeList,
-        List<Predicate> predicateList) {
+        ClaimPolicy claimPolicy,                // 零知识证明的  Claim 的 policy
+        List<String> revealedAttributeList,     // 需要回填的 显露列表
+        List<Predicate> predicateList) {        // 需要回填的 谓语列表
 
         String policyJson = null;
         try {
@@ -929,11 +948,13 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         }
         Map<String, Object> disclosureMap = DataToolUtils
             .deserialize(policyJson, HashMap.class);
+
+        // 遍历
         for (Map.Entry<String, Object> entry : disclosureMap.entrySet()) {
 
             String key = entry.getKey();
-            Object value = entry.getValue();
-            if (value instanceof Map) {
+            Object value = entry.getValue();  //
+            if (value instanceof Map) {       // 如果 value 是一个 map 的形式, 那么是一个 表达式
                 processExpression(key, (HashMap) value, predicateList);
             } else if (value instanceof Integer) {
                 processBaseValue(key, String.valueOf(value), revealedAttributeList);
@@ -946,16 +967,20 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
 
     }
 
+    // 处理 表达式 (zkp Claim policy 相关)
     private static void processExpression(
-        String key,
-        Map<String, Object> expression,
+        String key,                         // Claim 中的 key
+        Map<String, Object> expression,     // Claim 中的 value
         List<Predicate> predicateList) {
 
+        // 遍历 表达式 (里面存着一堆 谓语类型)
         for (Map.Entry<String, Object> entry : expression.entrySet()) {
 
             String predicateKey = entry.getKey();
             Object predicateValue = entry.getValue();
             PredicateType predicateType = getPredicateType(predicateKey);
+
+            // 根据当前 key  和 谓语Type, 谓语的value, 生成 谓语
             Predicate predicate = Utils.makePredicate(key, predicateType, (Integer) predicateValue);
             predicateList.add(predicate);
         }
@@ -970,6 +995,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         }
     }
 
+    // 根据 表达式的 key 生成对应的 表达式 类型
     private static PredicateType getPredicateType(String predicate) {
 
         switch (predicate) {
@@ -998,6 +1024,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         return false;
     }
 
+    // todo 校验 Lite 类型的 Credential
     private static ResponseData<Boolean> verifyLiteCredential(
         CredentialPojo credential,
         String publicKey) {
@@ -1053,6 +1080,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     }
 
     /**
+     * todo 验证授权令牌 Credential 中的授权信息
+     *
      * Verify the authorization info in an authorization token credential.
      *
      * @param authInfo the auth info in CPT101 format
@@ -1099,6 +1128,9 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     }
 
 
+    // TODO 【超级重要】
+    //      这个就是 生成 原始的 Credential 了
+    //
     // todo 根据传入的claim对象生成Credential (注意, 这个不传 Salt)
     //
     // todo 需要自己算 slat算出 salt
@@ -1123,6 +1155,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             }
             
             // Credential信息的基本数据结构
+            //
+            // TODO 最后 返回的  Credential
             CredentialPojo result = new CredentialPojo();
             // 设置Credential 默认的 `@contant` 字段的 URL
             String context = CredentialUtils.getDefaultCredentialContext();
@@ -1188,23 +1222,36 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             }
 
 
-            // todo 否则, ...
-            Map<String, Object> saltMap = DataToolUtils.clone(claimMap); // todo 需要自己算 slat算出 salt
-            generateSalt(saltMap, null);
+            // todo 否则 不是 lite类型, ...
+
+            // TODO 这里 只是将 Claim 中的 field 字段 copy到 saltMap中了, 但是还没算 salt
+            Map<String, Object> saltMap = DataToolUtils.clone(claimMap); // todo 需要自己算 slat
+
+            // todo ##################################################
+            // todo ############## 这里才是, 随机算 salt  ##############
+            // todo ##################################################
+            generateSalt(saltMap, null); // todo 添加 随机 salt
+
+            // todo 根据 saltMap 计算出对应的 Claim 的Hash (Claim 的字段全部加salt算Hash 哦)
             String rawData = CredentialPojoUtils
                 .getCredentialThumbprintWithoutSig(result, saltMap, null);
 
+            // todo 使用当前 issuer 的priKey 对整个 Credential 做签名
             String signature = DataToolUtils.sign(rawData, privateKey);
 
-            result.putProofValue(ParamKeyConstant.PROOF_CREATED, result.getIssuanceDate());
+            // --------------------------
+            // proof 中 添加 签名相关的信息
 
-            // 提取 认证方式中的 PubKey
+            result.putProofValue(ParamKeyConstant.PROOF_CREATED, result.getIssuanceDate());
+            // 提取 认证方式中的 PubKey的 index
             String weIdPublicKeyId = args.getWeIdAuthentication().getWeIdPublicKeyId();
             result.putProofValue(ParamKeyConstant.PROOF_CREATOR, weIdPublicKeyId);
 
+            // 默认是 ECDSA 算法类型
             String proofType = CredentialProofType.ECDSA.getTypeName();
             result.putProofValue(ParamKeyConstant.PROOF_TYPE, proofType);
             result.putProofValue(ParamKeyConstant.PROOF_SIGNATURE, signature);
+            // 最后将 salt 也加入 proof 中
             result.setSalt(saltMap);
             ResponseData<CredentialPojo> responseData = new ResponseData<>(
                 result,
@@ -1447,13 +1494,13 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     //
     // todo 从外面 传进来的  salt
     //
-    // todo 生成选择性披露的 Credential
+    // todo 需要生成选择性披露的 原始Credential
     //
     // todo 对于已经创建好的选择性披露凭证，不允许再次进行选择性披露
     @Override
     public ResponseData<CredentialPojo> createSelectiveCredential(
-        CredentialPojo credential,
-        ClaimPolicy claimPolicy) {
+        CredentialPojo credential,              // 外面入参的 需要做选择性披露的 原始 Credential  todo 里面包含了 原始的Claim各个字段的 原始 salt
+        ClaimPolicy claimPolicy) {              // 选择性披露策略
 
         if (credential == null) {
             logger.error("[createSelectiveCredential] input credential is null");
@@ -1472,30 +1519,51 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                 ErrorCode.CREDENTIAL_NOT_SUPPORT_SELECTIVE_DISCLOSURE);
         }
 
+        // todo #############################################
+        // todo #############################################
+        // todo #############################################
+        // todo
         // todo 只有 ORIGINAL 类型的 Credential 具备选择性披露
+        // todo
+        // todo #############################################
+        // todo #############################################
+        // todo #############################################
         try {
 
             // todo 一个 深拷贝
             CredentialPojo credentialClone = DataToolUtils.clone(credential);
+
+            // 形式校验
             ErrorCode checkResp = CredentialPojoUtils.isCredentialPojoValid(credentialClone);
             if (ErrorCode.SUCCESS.getCode() != checkResp.getCode()) {
                 return new ResponseData<CredentialPojo>(null, checkResp);
             }
+            // cpt Id 不能等于 107
             if (credentialClone.getCptId()
                 .equals(CredentialConstant.CREDENTIALPOJO_EMBEDDED_SIGNATURE_CPT)) {
                 return new ResponseData<>(null, ErrorCode.CPT_ID_ILLEGAL);
             }
+
+            // claim 的选择性披露 policy 不可为空
             if (claimPolicy == null) {
                 logger.error("[createSelectiveCredential] claimPolicy is null.");
                 return new ResponseData<CredentialPojo>(null,
                     ErrorCode.CREDENTIAL_CLAIM_POLICY_NOT_EXIST);
             }
+
+            // TODO #####################################################
+            // TODO #####################################################
+            // TODO
             // TODO 逐个检查 saltMap 中的 k-v 中的 value, 如果有value 是 "0" 值的话, 说明已经做过选择性披露了
             //
             // TODO 因为做过选择性披露的话, saltMap 中 对应 k-v 的value 会被置为 “0” 值
+            // TODO
+            // TODO #####################################################
+            // TODO #####################################################
             if (CredentialPojoUtils.isSelectivelyDisclosed(credential.getSalt())) {
                 return new ResponseData<CredentialPojo>(null, ErrorCode.CREDENTIAL_RE_DISCLOSED);
             }
+
             // todo 获取当前 policy 中的 选择性披露的字段  jsonStr
             String disclosure = claimPolicy.getFieldsToBeDisclosed();
 
@@ -1507,6 +1575,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             Map<String, Object> disclosureMap = DataToolUtils
                 .deserialize(disclosure, HashMap.class);
 
+            // todo 校验claim、salt和disclosureMap的格式是否一致
             if (!validCredentialMapArgs(claim, saltMap, disclosureMap)) {
                 logger.error(
                     "[createSelectiveCredential] create failed. message is {}",
@@ -1521,12 +1590,16 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             addSelectSalt(disclosureMap, saltMap, claim, false);
 
             // 给 Credential 的proof 中的salt 字段设置 (一个 salt Map)
-            // todo  但是这里的 salt Map 中 对应 不需要披露字段的 salt 已经被 清空了
-            // todo  但是, map 是个引用, 所以这里 设置 saltMap 有啥用 ??
-            // todo  如果要设置的话 为啥 claim 不也一起 在设置一编 ?
+            // todo  但是这里的 salt Map 中 对应 不需要披露字段的 salt 已经被 清空了,
+            //       被计算了Hash 的Claim字段对应的 salt 的值, 被置为 "0"
             //
-            // todo 是因为 salt 是 proof 中的, 而 proof 本身也是个 Map , 所以 salt 是个 map 中map 的原因么 ??
-            // todo 而 claim 是 Credential 的一个字段么 ??
+            // todo  但是, map 是个引用, 所以这里 设置 saltMap 有啥用 ??
+            //
+            //
+            // todo  问: 如果要设置的话 为啥 claim 不也一起 在设置一编 ?
+            //
+            // todo 答: 是因为 salt 是 proof 中的, 而 proof 本身也是个 Map , 所以 salt 是个 map 中map 的原因么 ??
+            //          而 claim 是 Credential 的一个字段么 ??
             credentialClone.setSalt(saltMap);
 
             //
@@ -1564,11 +1637,15 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
      */
     @Override
     public ResponseData<String> getCredentialPojoHash(CredentialPojo credentialPojo) {
+        // todo  校验 Credential 是否可用
         ErrorCode innerResponse = CredentialPojoUtils.isCredentialPojoValid(credentialPojo);
         if (ErrorCode.SUCCESS.getCode() != innerResponse.getCode()) {
             logger.error("Create Evidence input format error!");
             return new ResponseData<>(StringUtils.EMPTY, innerResponse);
         }
+
+        // TODO 根据入参的 Credential 生成 对应的 Hash
+        //      其中 salt 已经包含在 Credential 中了
         return new ResponseData<>(CredentialPojoUtils.getCredentialPojoHash(credentialPojo, null),
             ErrorCode.SUCCESS);
     }
@@ -2124,7 +2201,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         // 获取 构建 Presentation 的policy类型 {ORIGINAL, ZKP}
         String policyType = presentationPolicy.getPolicyType();
 
-        // 如果是 ZKP 类型的 Policy
+        // todo 如果是 ZKP 类型的 Policy
         if (StringUtils.equals(policyType, CredentialType.ZKP.getName())) {
 
             // todo 将入参的 Credential List 生成零知识证明相关的 Credential List信息
@@ -2165,6 +2242,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         return ErrorCode.SUCCESS;
     }
 
+
+    // todo 用于在 生成 Presentation 时的 Credential List 中的 zkp 相关 Credential
     private List<CredentialPojo> generateZkpCredentialList(
         List<CredentialPojo> credentialList,
         PresentationPolicyE presentationPolicy,
@@ -2179,7 +2258,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             if (claimPolicy == null) {
                 continue;
             }
-            // 根据原始证书和claimPolicy去创建选择性披露凭证
+            // todo 根据原始证书和claimPolicy去创建选择性披露凭证
             ResponseData<CredentialPojo> res = this
                 .createZkpCredential(credential, claimPolicy, userId);
 
@@ -2399,6 +2478,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     // todo 此接口仅在使用 `WeDPR` 的选择性披露时才需要调用，用于生成一些中间数据。
     //      用户根据传入的preCredential，
     //      claimJson以及weIdAuthentication生成基于系统CPT 111的credential。
+    //
+    // todo 最终由 AmopService 调用, 生成 zkp 相关的 Credential
     /* (non-Javadoc)
      * @see com.webank.weid.rpc.CredentialPojoService#prepareZKPCredential(
      * com.webank.weid.protocol.base.CredentialPojo, java.lang.Object)
@@ -2467,9 +2548,10 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         // todo  来了来了, 生成真正的 Credential 了
         //
         // todo 依赖外部入参 构造 Credential
-        return this.createCredential(args);
+        return this.createCredential(args); // 生成 cpt111 的Credential
     }
 
+    // todo 用于在 生成 Presentation 时的 Credential List 中的 zkp 相关 Credential
     private ResponseData<CredentialPojo> createZkpCredential(
         CredentialPojo credential,
         ClaimPolicy claimPolicy,
@@ -2489,10 +2571,16 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                 return new ResponseData<CredentialPojo>(null,
                     ErrorCode.CREDENTIAL_CLAIM_POLICY_NOT_EXIST);
             }
-            List<String> revealedAttributeList = new ArrayList<>();
-            List<Predicate> predicateList = new ArrayList<>();
+            List<String> revealedAttributeList = new ArrayList<>();  // 显露 列表
+            List<Predicate> predicateList = new ArrayList<>();       // 谓语 列表
 
+            // TODO 零知识证明 相关 Credential
+            //
+            //
             processZkpPolicy(claimPolicy, revealedAttributeList, predicateList);
+
+
+            // 和WDR 相关 SDK 封装的东西了
             VerificationRule verificationRule =
                 VerificationRule.newBuilder()
                     .addAllRevealedAttribute(revealedAttributeList)
@@ -2681,7 +2769,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         args.setIssuer(keyWeId);
         args.setIssuanceDate(DateUtils.getNoMillisecondTimeStamp());
         args.setExpirationDate(args.getIssuanceDate() + authInfo.getDuration());
-        ResponseData<CredentialPojo> resp = this.createCredential(args);
+        ResponseData<CredentialPojo> resp = this.createCredential(args); // 生成 授权 Credential, DataAuthToken
         innerErrorCode = verifyAuthClaim(resp.getResult());
         if (innerErrorCode != ErrorCode.SUCCESS) {
             return new ResponseData<>(null, innerErrorCode);

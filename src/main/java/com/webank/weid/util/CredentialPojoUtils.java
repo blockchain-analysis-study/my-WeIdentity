@@ -68,20 +68,35 @@ public final class CredentialPojoUtils {
      * Note that: 1. Keys should be dict-ordered; 2. Claim should use standard getClaimHash() to
      * support selective disclosure; 3. Use compact output to avoid Json format confusion.
      *
+     *
+     * todo 以Json格式连接 Credential 信息的所有字段, 不带签名.
+     *      计算凭据签名时应调用此选项.
+     *      如果凭据格式不合法，则返回null.
+     *      注意:
+     *      1.密钥应按字典顺序排列;
+     *      2.声明应使用标准的getClaimHash()支持选择性披露;
+     *      3.使用紧凑的输出以避免Json格式混淆.
+     *
      * @param credential target Credential object
      * @param salt Salt Map
      * @param disclosures Disclosure Map
      * @return Hash value in String.
      */
     public static String getCredentialThumbprintWithoutSig(
-        CredentialPojo credential,
-        Map<String, Object> salt,
-        Map<String, Object> disclosures) {
+        CredentialPojo credential,                  // Credential 的原始 数据
+        Map<String, Object> salt,                   // 外界传入的 salt
+        Map<String, Object> disclosures) {          // 外界传入的 选择性披露字段集
         try {
+            // 将 Credential 转成 Map
             Map<String, Object> credMap = DataToolUtils.objToMap(credential);
+
             // Preserve the same behavior as in CredentialUtils - will merge later
+            // 保留与 CredentialUtils 中相同的行为 - 稍后将合并
+
+            // 移除掉 proof 字段上的值
             credMap.remove(ParamKeyConstant.PROOF);
             credMap.put(ParamKeyConstant.PROOF, null);
+            // 其中 `getClaimHash()` todo 取出 Credential 中的Claim信息 加salt 算Hash
             credMap.put(ParamKeyConstant.CLAIM, getClaimHash(credential, salt, disclosures));
             return DataToolUtils.mapToCompactJson(credMap);
         } catch (Exception e) {
@@ -109,7 +124,7 @@ public final class CredentialPojoUtils {
             // Preserve the same behavior as in CredentialUtils - will merge later
             credMap.remove(ParamKeyConstant.PROOF);
             //credMap.put(ParamKeyConstant.PROOF, null);
-            credMap.put(ParamKeyConstant.CLAIM, getLiteClaimHash(credential));
+            credMap.put(ParamKeyConstant.CLAIM, getLiteClaimHash(credential)); // todo 获取 精简凭证 Claim HashMap
             return DataToolUtils.mapToCompactJson(credMap);
         } catch (Exception e) {
             logger.error("get Credential Thumbprint WithoutSig error.", e);
@@ -172,8 +187,15 @@ public final class CredentialPojoUtils {
     }
 
     /**
+     * TODO 获取 Credential 的各个字段的Hash
+     *      salt 由外面传入 ...
+     *
      * Concat all fields of Credential info, with signature. This should be invoked when calculating
      * Credential Evidence. Return null if credential format is illegal.
+     *
+     * todo 用 签名连接凭据信息的所有字段。
+     *      计算凭证时应调用此方法。
+     *      如果凭据格式不合法，则返回null。
      *
      * @param credential target Credential object
      * @param salt Salt Map
@@ -181,13 +203,16 @@ public final class CredentialPojoUtils {
      * @return Hash value in String.
      */
     public static String getCredentialPojoThumbprint(
-        CredentialPojo credential,
-        Map<String, Object> salt,
-        Map<String, Object> disclosures
+        CredentialPojo credential,          // 需要算 Hash 的Credential 原始字段 <可能是全字段>
+        Map<String, Object> salt,           // 外界传进来的 Claim 各个字段的 salt
+        Map<String, Object> disclosures     // 选择性披露的 字段 Map
     ) {
         try {
             Map<String, Object> credMap = DataToolUtils.objToMap(credential);
             // Replace the Claim value object with claim hash value to preserve immutability
+            // 用Claim哈希值替换Claim值对象以保持不变性
+
+            // 其中 `getClaimHash()` todo 取出 Credential 中的Claim信息 加salt 算Hash
             credMap.put(ParamKeyConstant.CLAIM, getClaimHash(credential, salt, disclosures));
             // Remove the whole Salt field to preserve immutability
             Map<String, Object> proof = (Map<String, Object>) credMap.get(ParamKeyConstant.PROOF);
@@ -203,8 +228,14 @@ public final class CredentialPojoUtils {
     }
 
     /**
+     *
+     * TODO 求得 CredentialPojo 的Claim 的Hash
+     *      salt 已经被包含在 Credential 中了
+     *
      * Create a full CredentialPojo Hash for a Credential based on all its fields, which is
      * resistant to selective disclosure.
+     *
+     * todo 根据其所有字段为凭证创建完整的CredentialPojo哈希, 这可以防止选择性公开.
      *
      * @param credentialPojo target Credential object
      * @param disclosures Disclosure Map
@@ -231,7 +262,7 @@ public final class CredentialPojoUtils {
         try {
             Map<String, Object> credMap = DataToolUtils.objToMap(credentialPojo);
             // Replace the Claim value object with claim hash value to preserve immutability
-            credMap.put(ParamKeyConstant.CLAIM, getLiteClaimHash(credentialPojo));
+            credMap.put(ParamKeyConstant.CLAIM, getLiteClaimHash(credentialPojo)); // todo 获取 精简凭证 Claim HashMap
             // Remove the whole Salt field to preserve immutability
             Map<String, Object> proof = (Map<String, Object>) credMap.get(ParamKeyConstant.PROOF);
             proof.remove(ParamKeyConstant.PROOF_SALT);
@@ -248,6 +279,8 @@ public final class CredentialPojoUtils {
 
     /**
      * Concat the credential list (embedded) into a selective disclosure resistant String.
+     *
+     * todo 将凭证列表（嵌入）连接到一个选择性防止公开的字符串中
      *
      * @param credentialList the credential list
      * @return the String
@@ -365,6 +398,10 @@ public final class CredentialPojoUtils {
     /**
      * Check if the given CredentialPojo is selectively disclosed, or not.
      *
+     * todo 检查给定的CredentialPojo是否被有选择地公开
+     *
+     * TODO  判断 字段上是否已经做过 选择性披露了, 如果是, 则 saltMap的 value 是 "0"
+     *
      * @param saltMap the saltMap
      * @return true if yes, false otherwise
      */
@@ -388,6 +425,8 @@ public final class CredentialPojoUtils {
             if (v == null) {
                 throw new WeIdBaseException(ErrorCode.CREDENTIAL_SALT_ILLEGAL);
             }
+
+            // TODO 只要有 value 为 "0", 说明 该字段已经做过 选择性披露
             if ("0".equals(v.toString())) {
                 return true;
             }
@@ -397,6 +436,8 @@ public final class CredentialPojoUtils {
 
     /**
      * Check if the given CredentialPojo is selectively disclosed, or not.
+     *
+     * todo 检查给定的CredentialPojo是否被有选择地公开
      *
      * @param saltList the saltList
      * @return true if yes, false otherwise
@@ -428,6 +469,8 @@ public final class CredentialPojoUtils {
     /**
      * Check whether a credential list contains any selectively disclosed credential.
      *
+     * todo 检查凭据列表是否包含任何选择性公开的凭据
+     *
      * @param credentialList the credential list
      * @return true if yes, false otherwise
      */
@@ -457,6 +500,8 @@ public final class CredentialPojoUtils {
     /**
      * Get the lite credential claim hash.
      *
+     * todo 获取 精简凭证 Claim HashMap
+     *
      * @param credential Credential
      * @return the claimMap value
      */
@@ -470,27 +515,35 @@ public final class CredentialPojoUtils {
     /**
      * Get the claim hash. This is irrelevant to selective disclosure.
      *
+     * todo 获取 Claim Hash. 这与选择性披露无关.
+     *
+     * todo salt 从外面传进来的
+     *
      * @param credential Credential
      * @param salt Salt Map
      * @param disclosures Disclosure Map
      * @return the claimMap value
      */
     public static Map<String, Object> getClaimHash(
-        CredentialPojo credential,
-        Map<String, Object> salt,
-        Map<String, Object> disclosures
+        CredentialPojo credential,                  // credential 的原始数据
+        Map<String, Object> salt,                   // salt 从外面传进来的
+        Map<String, Object> disclosures             // 选择性披露的 Map
     ) {
 
+        // todo 取出 Credential 中的Claim信息
         Map<String, Object> claim = credential.getClaim();
         Map<String, Object> newClaim = DataToolUtils.clone((HashMap) claim);
+
+        // todo 对 claim的 字段 做对应的 加salt 算Hash处理
         addSaltAndGetHash(newClaim, salt, disclosures);
         return newClaim;
     }
 
+    // todo 对 claim的 字段 做对应的 加salt 算Hash处理
     private static void addSaltAndGetHash(
-        Map<String, Object> claim,
-        Map<String, Object> salt,
-        Map<String, Object> disclosures
+        Map<String, Object> claim,          // 原始的 Claim
+        Map<String, Object> salt,           // 对应字段上的 salt
+        Map<String, Object> disclosures     // 对应的选择性披露字段
     ) {
         for (Map.Entry<String, Object> entry : salt.entrySet()) {
             String key = entry.getKey();
@@ -518,25 +571,32 @@ public final class CredentialPojoUtils {
                     disclosureObjList
                 );
             } else {
+                // todo 根据 disclosure的值 和 salt的值, 决定当前 Claim 的值是否需要 加 salt算Hash
                 addSaltByDisclose(claim, key, disclosureObj, saltObj, newClaimObj);
             }
         }
     }
 
+    // todo 根据 disclosure的值 和 salt的值, 决定当前 Claim 的值是否需要 加 salt算Hash
     private static void addSaltByDisclose(
         Map<String, Object> claim,
         String key,
         Object disclosureObj,
-        Object saltObj,
+        Object saltObj,       // 已经算过Hash 的Claim的值, 对应的salt值是 "0"
         Object newClaimObj
     ) {
+
+        // disclosure的值 不存在的时候, 是否决定算 Hash, 我们看 salt的值
         if (disclosureObj == null) {
+            // 如果 salt 的值不是 "0", 则需要做 加salt算Hash
             if (!NOT_DISCLOSED.toString().equals(saltObj.toString())) {
                 claim.put(
                     key,
                     getFieldSaltHash(String.valueOf(newClaimObj), String.valueOf(saltObj))
                 );
             }
+
+        // 发现该  disclosure 的值 为 "0", 说明 不需要披露, 则需要加 salt算 Hash
         } else if (NOT_DISCLOSED.toString().equals(disclosureObj.toString())) {
             claim.put(
                 key,

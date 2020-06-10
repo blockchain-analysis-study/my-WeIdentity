@@ -59,7 +59,9 @@ import com.webank.weid.util.DateUtils;
 import com.webank.weid.util.WeIdUtils;
 
 /**
- * TODO 凭证签发相关功能的核心接口。 (和 CredentialPojoServiceImpl 一起)
+ * TODO 凭证签发相关功能的核心接口。 (后续都用 CredentialPojoServiceImpl)
+ *
+ * TODO 旧版的, 后续将作废
  *
  * todo 本接口提供凭证的签发和验证操作、Verifiable Presentation的签发和验证操作。
  * Service implementations for operations on Credential.

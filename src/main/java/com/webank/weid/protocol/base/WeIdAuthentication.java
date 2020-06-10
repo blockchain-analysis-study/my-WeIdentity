@@ -41,7 +41,7 @@ public class WeIdAuthentication {
     
     /**
      *
-     * 和该 WeId 绑定的 公钥
+     * 和该 WeId 绑定的 公钥 的 Index
      * the public key Id.
      */
     private String weIdPublicKeyId;

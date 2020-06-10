@@ -46,6 +46,8 @@ import com.webank.weid.util.DataToolUtils;
  * TODO 对外的 Credential 类型, 组成 Presentation 的一部分
  * The base data structure to handle Credential info.
  *
+ * TODO 这个 Pojo 是包含了 salt的
+ *
  * @author junqizhang 2019.04
  */
 @Data
@@ -201,6 +203,8 @@ public class CredentialPojo implements IProof, JsonSerializer, Hashable {
     }
 
     /**
+     * todo 返回在 proof 中的 salt
+     *
      * Directly extract the salt from credential.
      *
      * @return salt
@@ -210,7 +214,8 @@ public class CredentialPojo implements IProof, JsonSerializer, Hashable {
     }
 
     /**
-     * todo salt 是对应着 每个不需要披露的 Claim 的字段单独算的,所以需要一个Map (Claim FialdName => Salt)
+     * todo salt 是对应着 每个不需要披露的 Claim 的字段单独算的,所以需要一个Map
+     *
      * put the salt into proof.
      *
      * @param salt map of salt
@@ -262,17 +267,25 @@ public class CredentialPojo implements IProof, JsonSerializer, Hashable {
     }
 
     /**
+     * todo  生成 Claim 各个字段的 Hash
+     *       Pojo 里面已经有 salt 了
+     *
+     *
      * Generate the unique hash of this CredentialPojo.
      *
      * @return hash value
      */
     public String getHash() {
+
+        // 轻模式的 Claim Hash
         if (type.contains(CredentialType.LITE1.getName())) {
             return CredentialPojoUtils.getLiteCredentialPojoHash(this);
         }
         if (CredentialPojoUtils.isCredentialPojoValid(this) != ErrorCode.SUCCESS) {
             return StringUtils.EMPTY;
         }
+
+        // 一般模式 (加 salt) 的Claim Hash
         return CredentialPojoUtils.getCredentialPojoHash(this, null);
     }
 

@@ -798,22 +798,36 @@ public class TestCreateEvidence extends TestBaseService {
         if (credentialPojo == null) {
             credentialPojo = super.createCredentialPojo(createCredentialPojoArgs);
         }
+        // 原始 credential 信息
         CredentialPojo originalCredential = copyCredentialPojo(credentialPojo);
+        // 选择性披露的 credential 信息
         CredentialPojo sdCredential = copyCredentialPojo(selectiveCredentialPojo);
         Assert.assertTrue(CredentialPojoUtils.isSelectivelyDisclosed(sdCredential.getSalt()));
         Assert.assertTrue(originalCredential.getSignature().equals(sdCredential.getSignature()));
+
+        // 算出 原始的 credential Hash
         String originalHashValue = credentialPojoService.getCredentialPojoHash(originalCredential)
             .getResult();
+
+        // 算出 选择性披露 credential Hash
         String sdHashValue = credentialPojoService.getCredentialPojoHash(sdCredential).getResult();
         Assert.assertTrue(originalHashValue.equalsIgnoreCase(sdHashValue));
+
+        // 给原始的 Credential 生成 Evidence
         String originalAddr = evidenceService
             .createEvidence(originalCredential, createWeIdNew.getUserWeIdPrivateKey()).getResult();
+        // 给选择性欧陆 Credential 生成 Evidence
         String sdAddr = evidenceService
             .createEvidence(sdCredential, createWeIdNew.getUserWeIdPrivateKey()).getResult();
         Assert.assertTrue(!StringUtils.isEmpty(originalAddr));
         Assert.assertTrue(!StringUtils.isEmpty(sdAddr));
+
+        // 获取 chain 上的 原始Credential 的 Evidence
         EvidenceInfo originalEvi = evidenceService.getEvidence(originalAddr).getResult();
+        // 获取 chain 上的 选择性披露Credential 的 Evidence
         EvidenceInfo sdEvi = evidenceService.getEvidence(sdAddr).getResult();
+
+        // 两者的 Hash 必须相等
         Assert.assertTrue(
             originalEvi.getCredentialHash().equalsIgnoreCase(sdEvi.getCredentialHash()));
     }

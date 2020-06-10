@@ -32,11 +32,13 @@ public enum CredentialFieldDisclosureValue {
     EXISTED(2),
 
     /**
+     * todo 需要 披露 "1"
      * the field is disclosed.
      */
     DISCLOSED(1),
 
     /**
+     * todo 不需要 披露 "0"
      * the field is not disclosed.
      */
     NOT_DISCLOSED(0);
