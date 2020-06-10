@@ -2563,7 +2563,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     private ResponseData<CredentialPojo> createZkpCredential(
         CredentialPojo credential,
         ClaimPolicy claimPolicy,
-        String userId) {
+        String userId) {   // holder 的weId
         try {
             CredentialPojo credentialClone = DataToolUtils.clone(credential);
             ErrorCode checkResp = CredentialPojoUtils.isCredentialPojoValid(credentialClone);
@@ -2594,6 +2594,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                     .addAllRevealedAttribute(revealedAttributeList)
                     .addAllPredicateAttribute(predicateList)
                     .build();
+
+
             String encodedVerificationRule = Utils.protoToEncodedString(verificationRule);
             ResponseData<String> dbResp =
                 getDataDriver().get(
@@ -2606,11 +2608,15 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                 getDataDriver().get(
                     DataDriverConstant.DOMAIN_USER_MASTER_SECRET,
                     id);
+
             HashMap<String, String> userCredentialInfo = DataToolUtils
                 .deserialize(masterKeyResp.getResult(), HashMap.class);
             String masterSecret = userCredentialInfo.get("masterSecret");
+
             ResponseData<CredentialTemplateEntity> credentialTemplateResp = getCptService()
                 .queryCredentialTemplate(cptId);
+
+
             CredentialTemplateEntity credentialTemplate = credentialTemplateResp.getResult();
             Map<String, String> credentialInfoMap = new HashMap<>();
             credentialInfoMap = JsonUtil.credentialToMonolayer(credential);

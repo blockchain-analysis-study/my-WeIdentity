@@ -175,6 +175,8 @@ public class CptServiceEngineV2 extends BaseEngine implements CptServiceEngine {
         try {
             CptController cptController =
                 reloadContract(fiscoConfig.getCptAddress(), privateKey, CptController.class);
+
+
             transactionReceipt = cptController.registerCpt(
                 BigInteger.valueOf(cptId),
                 address,
@@ -228,6 +230,8 @@ public class CptServiceEngineV2 extends BaseEngine implements CptServiceEngine {
         try {
             CptController cptController =
                 reloadContract(fiscoConfig.getCptAddress(), privateKey, CptController.class);
+
+            // 注册 CPT
             transactionReceipt = cptController.registerCpt(
                 address,
                 DataToolUtils.listToListBigInteger(
@@ -252,6 +256,8 @@ public class CptServiceEngineV2 extends BaseEngine implements CptServiceEngine {
                 return response;
             }
             Integer cptId = response.getResult().getCptId();
+
+            //
             ErrorCode errorCode = processTemplate(cptId, cptJsonSchemaNew);
             int code = errorCode.getCode();
             if (code != ErrorCode.SUCCESS.getCode()) {
@@ -286,6 +292,8 @@ public class CptServiceEngineV2 extends BaseEngine implements CptServiceEngine {
                 logger.error("[processTemplate] save credential template to db failed.");
                 throw new DatabaseException("database error!");
             }
+
+            // 存入 CredentTemplate
             TransactionReceipt receipt = cptController.putCredentialTemplate(
                 new BigInteger(String.valueOf(cptId)),
                 template.getPublicKey().getCredentialPublicKey().getBytes(),
