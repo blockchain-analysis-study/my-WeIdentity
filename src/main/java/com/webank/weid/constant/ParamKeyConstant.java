@@ -71,16 +71,16 @@ public final class ParamKeyConstant {
      * todo  Credential 和 Presentation 中的 proof 的字段 (VC 和 VP 两者的 Proof 字段基本上一样)
      * proof key.
      */
-    public static final String PROOF = "proof";
-    public static final String PROOF_SIGNATURE = "signatureValue";
-    public static final String PROOF_TYPE = "type";
-    public static final String PROOF_CREATED = "created";
-    public static final String PROOF_CREATOR = "creator";
-    public static final String PROOF_SALT = "salt";   // Presentation 和 CredentialPojo 都要
-    public static final String PROOF_VERIFICATION_METHOD = "verificationMethod";
-    public static final String PROOF_NONCE = "nonce";
-    public static final String PROOF_VERIFICATIONREQUEST = "verificationRequest";
-    public static final String PROOF_ENCODEDVERIFICATIONRULE = "encodedVerificationRule";
+    public static final String PROOF = "proof";                                             // W3C 标准字段, proof  (presentation 和 credential 都有)
+    public static final String PROOF_SIGNATURE = "signatureValue";                          // 微众自定义, (对应W3C的 jws ?), proof中存放的 sign值 (presentation 和 credential 都有)
+    public static final String PROOF_TYPE = "type";                                         // W3C 标准字段, proof中存放 sign生成的算法方式 (presentation 和 credential 都有)
+    public static final String PROOF_CREATED = "created";                                   // W3C 标准字段, proof中存放的 (presentation 和 credential 都有)
+    public static final String PROOF_CREATOR = "creator";                                   // 微众自定义, credential.Proof 独有
+    public static final String PROOF_SALT = "salt";                                         // 微众自定义, 只有 CredentialPojo 要
+    public static final String PROOF_VERIFICATION_METHOD = "verificationMethod";            // W3C标准, proof中存放  `did:example:ebfeb1f712ebc6f1c276e12ec21#keys-1` 形式
+    public static final String PROOF_NONCE = "nonce";                                       // 微众自定义, 对应 W3C 中的 challenge字段, 只有 Presentation 使用
+    public static final String PROOF_VERIFICATIONREQUEST = "verificationRequest";           // 微众自定义, 微众的 零知识证明 Credential 的字段, 和 `encodedVerificationRule` 配套
+    public static final String PROOF_ENCODEDVERIFICATIONRULE = "encodedVerificationRule";   // 微众自定义, 微众的 零知识证明 Credential 的字段, 和 `verificationRequest` 配套
 
 
     /**

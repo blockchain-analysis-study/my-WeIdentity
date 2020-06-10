@@ -1240,7 +1240,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             String signature = DataToolUtils.sign(rawData, privateKey);
 
             // --------------------------
-            // proof 中 添加 签名相关的信息
+            // todo credential的proof 中 添加 签名相关的信息
 
             result.putProofValue(ParamKeyConstant.PROOF_CREATED, result.getIssuanceDate());
             // 提取 认证方式中的 PubKey的 index
@@ -1253,6 +1253,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             result.putProofValue(ParamKeyConstant.PROOF_SIGNATURE, signature);
             // 最后将 salt 也加入 proof 中
             result.setSalt(saltMap);
+
             ResponseData<CredentialPojo> responseData = new ResponseData<>(
                 result,
                 ErrorCode.SUCCESS
@@ -2052,6 +2053,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
     }
 
     /**
+     * TODO 【超级重要】
      * TODO 创建一个 Presentation 实例
      * @param credentialList original credential list
      * @param presentationPolicyE the disclosure strategies.
@@ -2061,10 +2063,10 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
      */
     @Override
     public ResponseData<PresentationE> createPresentation(
-        List<CredentialPojo> credentialList,
-        PresentationPolicyE presentationPolicyE,
-        Challenge challenge,
-        WeIdAuthentication weIdAuthentication) {
+        List<CredentialPojo> credentialList,                    // 需要组装成 Presentation 的Credential List
+        PresentationPolicyE presentationPolicyE,                // 各个Credential对应的Claim 选择性披露 或者 零知识证明的 Policy
+        Challenge challenge,                                    // 当前 Presentation 的验证方给 holder 的 Challenge
+        WeIdAuthentication weIdAuthentication) {                // 生成当前 Presentation 的holder 的 Authentication
 
         // 构造一个 空的 Presentation
         PresentationE presentation = new PresentationE();
@@ -2085,8 +2087,12 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
                 );
                 return new ResponseData<PresentationE>(null, errorCode);
             }
-            // 处理 credential List数据, 取回精处理后的 具备选择性披露的 Credential 的List, todo 回填到 presentation 中
-            errorCode = processCredentialList(credentialList, presentationPolicyE, presentation, // 这个是要 回填的 presentation
+            // todo 处理 credential List数据, 取回精处理后的 具备选择性披露的 Credential 的List,
+            //      回填到 presentation 中
+            errorCode = processCredentialList(
+                    credentialList,
+                    presentationPolicyE,
+                    presentation,               // 这个是要 回填的 presentation
                 weIdAuthentication.getWeId());
             if (errorCode.getCode() != ErrorCode.SUCCESS.getCode()) {
                 logger.error(
@@ -2101,6 +2107,7 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             presentation.getContext().add(CredentialConstant.DEFAULT_CREDENTIAL_CONTEXT);
             // 给 Presentation 实例填充 type 的内容
             presentation.getType().add(WeIdConstant.DEFAULT_PRESENTATION_TYPE);
+
             // 处理proof数据
             //
             // todo challenge 挑战 是在这里用的
@@ -2191,9 +2198,9 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
         List<CredentialPojo> credentialList,
         PresentationPolicyE presentationPolicy,
         PresentationE presentation,
-        String userId) {
+        String userId) {     // 当前 holder 的 WeId
 
-        // 构建一个 需要对外展示的CredentialPojo List
+        // todo 构建一个 需要对外展示的CredentialPojo List
         List<CredentialPojo> newCredentialList = new ArrayList<>();
         // 获取 Presentation的Policy中的  ClaimPolicyMap
         Map<Integer, ClaimPolicy> claimPolicyMap = presentationPolicy.getPolicy();
@@ -2208,7 +2215,8 @@ public class CredentialPojoServiceImpl implements CredentialPojoService {
             newCredentialList = generateZkpCredentialList(credentialList, presentationPolicy,
                 userId);
         }
-        // 否则是  ORIGINAL 类型的 Policy
+
+        // todo 否则是  ORIGINAL 类型的 Policy
         else {
 
             // todo 遍历所有原始证书
