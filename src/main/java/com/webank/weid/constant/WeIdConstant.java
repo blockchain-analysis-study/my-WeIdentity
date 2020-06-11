@@ -228,11 +228,13 @@ public final class WeIdConstant {
     public static final String FISCO_BCOS_1_X_VERSION_PREFIX = "1";
 
     /**
+     * todo 删除了WeID公钥指定的标签
      * Removed WeID public key specified tag.
      */
     public static final String REMOVED_PUBKEY_TAG = "OBSOLETE";
 
     /**
+     * todo 删除了WeID身份验证指定的标签
      * Removed WeID authentication specified tag.
      */
     public static final String REMOVED_AUTHENTICATION_TAG = "OBSOLETEAUTH";

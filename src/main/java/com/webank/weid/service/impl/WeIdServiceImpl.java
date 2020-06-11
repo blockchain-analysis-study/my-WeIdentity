@@ -183,7 +183,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
             return new ResponseData<>(null, ErrorCode.WEID_INVALID);
         }
 
-        // todo 去 chain 查询 Document 信息
+        // todo 去 chain 查询 Document 信息, 这里面包含的 "OBSOLETE"的publicKey 和 "OBSOLETEAUTH"的authentication
         ResponseData<WeIdDocument> weIdDocResp = weIdServiceEngine.getWeIdDocument(weId);
         if (weIdDocResp.getErrorCode() != ErrorCode.SUCCESS.getCode()) {
             return weIdDocResp;
@@ -192,12 +192,17 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
             weIdDocResp.getErrorCode(), weIdDocResp.getErrorMessage());
     }
 
+    // TODO 清除掉 状态为 "失效的", 也就是 "OBSOLETE" 字样的 publicKey 和 auth
     private WeIdDocument trimObsoleteWeIdDocument(WeIdDocument originalDocument) {
         List<PublicKeyProperty> pubKeysToRemove = new ArrayList<>();
         List<AuthenticationProperty> authToRemove = new ArrayList<>();
+
+        // 遍历, 如果 publicKey 为 "OBSOLETE", 则 从 publicKey List 中移除 publicKey
         for (PublicKeyProperty pr : originalDocument.getPublicKey()) {
             if (pr.getPublicKey().contains(WeIdConstant.REMOVED_PUBKEY_TAG)) {
                 pubKeysToRemove.add(pr);
+
+                // 且对应的  auth 也将清除
                 for (AuthenticationProperty ap : originalDocument.getAuthentication()) {
                     if (ap.getPublicKey().equalsIgnoreCase(pr.getId())) {
                         authToRemove.add(ap);
@@ -205,6 +210,8 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
                 }
             }
         }
+
+        // 遍历, 如果 auth 为 "OBSOLETEAUTH", 则 从 auth List 中移除 auth
         for (AuthenticationProperty ap : originalDocument.getAuthentication()) {
             if (ap.getPublicKey().contains(WeIdConstant.REMOVED_AUTHENTICATION_TAG)) {
                 authToRemove.add(ap);

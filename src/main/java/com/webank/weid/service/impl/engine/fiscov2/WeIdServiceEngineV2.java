@@ -150,14 +150,27 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
         return response;
     }
 
+    // TODO 这个才是真正的查询 Event 中的 K-V
     private static void buildupWeIdAttribute(
         String key, String value, String weId, WeIdDocument result) {
+
+        // 判断 key 前缀
+
+        // 如果是 /weId/pubkey 前缀, 则表示 当前 k-v 存的是  publicKey
         if (StringUtils.startsWith(key, WeIdConstant.WEID_DOC_PUBLICKEY_PREFIX)) {
+
+            // todo  解出 PublicKey
             buildWeIdPublicKeys(key, value, weId, result);
-        } else if (StringUtils.startsWith(key, WeIdConstant.WEID_DOC_AUTHENTICATE_PREFIX)) {
+        }
+        // 如果是 /weId/auth 前缀, 则表示 当前 k-v\存的是 auth
+        else if (StringUtils.startsWith(key, WeIdConstant.WEID_DOC_AUTHENTICATE_PREFIX)) {
+
+            // 这里这么做, 就是因为 WeId 的 createWeId() 时, 合约中只放了 auth 而没有 放publicKey, 这里需要将这个 publicKey 也拿出来
+            // TODO 愚蠢的做法
             if (!value.contains(WeIdConstant.REMOVED_PUBKEY_TAG)) {
                 buildWeIdPublicKeys(null, value, weId, result);
             }
+            // todo 解出 auth
             buildWeIdAuthentication(value, weId, result);
         } else if (StringUtils.startsWith(key, WeIdConstant.WEID_DOC_SERVICE_PREFIX)) {
             buildWeIdService(key, value, weId, result);
@@ -166,31 +179,51 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
         }
     }
 
+
+    // todo 解出 publicKey Key
     private static void buildWeIdPublicKeys(String key, String value, String weId,
         WeIdDocument result) {
 
         logger.info("method buildWeIdPublicKeys() parameter::value:{}, weId:{}, "
             + "result:{}", value, weId, result);
+
+
+        // 从入参的 Document 中取到之前取得的 publicKey 集合 todo  做去重用
         List<PublicKeyProperty> pubkeyList = result.getPublicKey();
 
+        // 默认使用 `Secp256k1` type
         String type = PublicKeyType.SECP256K1.getTypeName();
         // Identify explicit type from key
+        // 从 Key 识别显式类型
         if (!StringUtils.isEmpty(key)) {
+            // 拆解 Key
             String[] keyArray = StringUtils.splitByWholeSeparator(key, "/");
             if (keyArray.length > 2) {
+
+                // 因为 key: /weId/pubkey/{publicKeyTypeName}/base64
+                // 取出 key 上记录的 type
                 type = keyArray[2];
             }
         }
 
         // Only store the latest public key
         // OBSOLETE and non-OBSOLETE public keys are regarded as the same
+        //
+        // 只存储最新的公钥
+        // “OBSOLETE” 和 “non-OBSOLETE” 公钥被视为相同
+        //
+        // 清除掉 publicKey 上面的 "OBSOLETE" 标识位
         String trimmedPubKey = StringUtils
             .splitByWholeSeparator(value.replace(WeIdConstant.REMOVED_PUBKEY_TAG, ""), "/")[0];
+
+        // 去重 publicKey, todo 之前已经取到的 该publicKey 的最新信息的话, 则 该 publicKey 的旧数据就不要了
         for (PublicKeyProperty pr : pubkeyList) {
             if (pr.getPublicKey().contains(trimmedPubKey)) {
                 return;
             }
         }
+
+        // 代码里面自己给别人加的 #key-{index}
         PublicKeyProperty pubKey = new PublicKeyProperty();
         pubKey.setId(
             new StringBuffer()
@@ -199,29 +232,50 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
                 .append(result.getPublicKey().size())
                 .toString()
         );
+
+        // 注意这里才是真正的 处理 value 哦
         String[] publicKeyData = StringUtils.splitByWholeSeparator(value, "/");
         if (publicKeyData != null && publicKeyData.length == 2) {
-            pubKey.setPublicKey(publicKeyData[0]);
+
+            // 因为 publicKey的value 在合约中为: {pubKey}/{owner}
+
+            pubKey.setPublicKey(publicKeyData[0]);                      // todo 注意 这里的 key可能为 "OBSOLETE" 尾缀
             String weAddress = publicKeyData[1];
             String owner = WeIdUtils.convertAddressToWeId(weAddress);
-            pubKey.setOwner(owner);
+            pubKey.setOwner(owner);                                     // 设置 owner
         }
-        pubKey.setType(type);
-        result.getPublicKey().add(pubKey);
+        pubKey.setType(type);                                           // 设置 type
+        result.getPublicKey().add(pubKey);                              // 往 publicKey List 中添加 publicKey
     }
 
+
+    // todo 解出 authentication
     private static void buildWeIdAuthentication(String value, String weId, WeIdDocument result) {
 
         logger.info("method buildWeIdAuthentication() parameter::value:{}, weId:{}, "
             + "result:{}", value, weId, result);
+
+
         AuthenticationProperty auth = new AuthenticationProperty();
+        // 取出Document 中已经取回的 publicKey
         List<PublicKeyProperty> keys = result.getPublicKey();
+        // 取出Document 中已经取回的 authentication
         List<AuthenticationProperty> authList = result.getAuthentication();
 
         // Firstly, if this is an obsolete auth, directly append it and return unless a same
         // one exists; if this is a normal auth, then check whether there is an existing obsolete
         // one. if so, return. if not, go down further.
+        //
+        // 首先, 如果这是一个过时的身份验证, 则直接附加它并返回，除非存在相同的身份验证;
+        // 如果这是普通身份验证, 则请检查是否存在已过时的身份验证.
+        // 如果是这样, 请返回. 如果没有,请继续下去.
+
+        // todo 先处理 已经失效的 auth, 带有 "OBSOLETEAUTH" 标识的
+        //
+        // auth 在合约中的 value 为: {publicKey}/{owner}
         if (value.contains(WeIdConstant.REMOVED_AUTHENTICATION_TAG)) {
+
+            // 遍历所有原有的 auth  List
             for (AuthenticationProperty ap : authList) {
                 String pubKeyId = ap.getPublicKey();
                 for (PublicKeyProperty pkp : keys) {
@@ -234,6 +288,8 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
             auth.setPublicKey(value);
             result.getAuthentication().add(auth);
         } else {
+
+            //
             for (AuthenticationProperty ap : authList) {
                 if (ap.getPublicKey()
                     .replace(WeIdConstant.REMOVED_AUTHENTICATION_TAG, "")
@@ -244,6 +300,7 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
             }
         }
 
+        // 为毛 又遍历 publicKey ??
         for (PublicKeyProperty r : keys) {
             if (StringUtils.contains(value, r.getPublicKey())) {
                 for (AuthenticationProperty ar : authList) {
@@ -296,7 +353,7 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
 
         if (StringUtils.isNotBlank(event)) {
 
-            // 判断 event 的 name: WeIdAttributeChanged
+            // 判断 event 的 name: `WeIdAttributeChanged`
             switch (event) {
                 case WeIdConstant.WEID_EVENT_ATTRIBUTE_CHANGE:
 
@@ -310,11 +367,11 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
         return response;
     }
 
-    // 处理回执, 提取出 Document 信息
+    // todo 处理回执, 提取出 Document 信息
     private static void resolveTransaction(
         String weId,
         int blockNumber,
-        WeIdDocument result // todo  需要被 回写 的 Document 对象
+        WeIdDocument result     // todo  需要被 回写 的 Document 对象
     ) {
 
         int previousBlock = blockNumber;
@@ -344,7 +401,6 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
                 return;
             }
 
-            // 遍历所有交易
             List<Transaction> transList =
                 latestBlock
                     .getBlock()
@@ -355,6 +411,7 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
 
             previousBlock = 0;
             try {
+                // todo 遍历所有交易
                 for (Transaction transaction : transList) {
                     String transHash = transaction.getHash();
 
@@ -364,7 +421,7 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
                     TransactionReceipt receipt = rec1.getTransactionReceipt().get();
                     List<Log> logs = rec1.getResult().getLogs();
                     for (Log log : logs) {
-                        // 处理 logs
+                        // todo 处理 logs
                         ResolveEventLogResult returnValue =
                             resolveEventLog(weId, log, receipt, result);
                         if (returnValue.getResultStatus().equals(
@@ -412,6 +469,7 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
         }
     }
 
+    // todo 这里面包含的 "OBSOLETE"的publicKey 和 "OBSOLETEAUTH"的authentication
     /* (non-Javadoc)
      * @see com.webank.weid.service.impl.engine.WeIdController#getWeIdDocument(java.lang.String)
      */
@@ -430,7 +488,8 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
                 return new ResponseData<>(null, ErrorCode.WEID_DOES_NOT_EXIST);
             }
 
-            // 处理回执, 提取出 Document 信息
+            // todo 处理回执, 提取出 Document 信息
+            //      这里面包含的 "OBSOLETE"的publicKey 和 "OBSOLETEAUTH"的authentication
             resolveTransaction(weId, latestBlockNumber, result);
             return new ResponseData<WeIdDocument>(result, ErrorCode.SUCCESS);
         } catch (InterruptedException | ExecutionException e) {
