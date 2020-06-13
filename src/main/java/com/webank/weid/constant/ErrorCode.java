@@ -699,6 +699,7 @@ public enum ErrorCode {
     ),
 
     /**
+     * 您无法删除最后一个公开密钥或自己的公开密钥
      * you cannot remove your last public key or your own public key.
      */
     WEID_CANNOT_REMOVE_ITS_OWN_PUB_KEY_WITHOUT_BACKUP(

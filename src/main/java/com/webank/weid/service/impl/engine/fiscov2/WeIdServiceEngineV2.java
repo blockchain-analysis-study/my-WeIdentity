@@ -351,6 +351,9 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
         String topic = log.getTopics().get(0);
         String event = topicMap.get(topic);
 
+
+        // 如果当前 logs, (也就是当前 合约中的 event) 的Name 是 `WeIdAttributeChanged`
+        // 则, 转成 AttributeEvent 去处理当前 receipt
         if (StringUtils.isNotBlank(event)) {
 
             // 判断 event 的 name: `WeIdAttributeChanged`
@@ -418,8 +421,13 @@ public class WeIdServiceEngineV2 extends BaseEngine implements WeIdServiceEngine
                     BcosTransactionReceipt rec1 = ((Web3j) getWeb3j())
                         .getTransactionReceipt(transHash)
                         .send();
+
+                    // todo 获取当前 tx的 receipt
                     TransactionReceipt receipt = rec1.getTransactionReceipt().get();
+                    // todo 获取当前 receipt 的 logs
                     List<Log> logs = rec1.getResult().getLogs();
+
+                    // 逐个遍历 logs
                     for (Log log : logs) {
                         // todo 处理 logs
                         ResolveEventLogResult returnValue =
