@@ -297,6 +297,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
         for (PublicKeyProperty pk : publicKeys) {
             // TODO in future, add authorization check
             if (pk.getPublicKey().equalsIgnoreCase(setPublicKeyArgs.getPublicKey())) {
+                // 如果 当前只剩下最后一个 public key 了, 则不可删除
                 if (publicKeys.size() == 1) {
                     return new ResponseData<>(false,
                         ErrorCode.WEID_CANNOT_REMOVE_ITS_OWN_PUB_KEY_WITHOUT_BACKUP);
@@ -312,6 +313,8 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
         setAuthenticationArgs.setUserWeIdPrivateKey(weIdPrivateKey);
         setAuthenticationArgs.setPublicKey(setPublicKeyArgs.getPublicKey());
         setAuthenticationArgs.setOwner(setPublicKeyArgs.getOwner());
+
+        // 先删除对应 publick 的 authentication
         ResponseData<Boolean> removeAuthResp = this.removeAuthentication(setAuthenticationArgs);
         if (!removeAuthResp.getResult()) {
             logger.error("Failed to remove authentication: " + removeAuthResp.getErrorMessage());
@@ -344,9 +347,11 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
             String publicKey = setPublicKeyArgs.getPublicKey();
             String attrValue = new StringBuffer()
                 .append(publicKey)
-                .append(WeIdConstant.REMOVED_PUBKEY_TAG).append("/")
+                .append(WeIdConstant.REMOVED_PUBKEY_TAG).append("/") // 在 publick 上追加 `OBSOLETE` 就是 删除 piblic key 了
                 .append(owner)
                 .toString();
+
+            // 然后在删除 publick key
             return weIdServiceEngine.setAttribute( // 设置 PubKey
                 weAddress,
                 attributeKey,
@@ -580,7 +585,7 @@ public class WeIdServiceImpl extends AbstractService implements WeIdService {
             try {
                 String attrValue = new StringBuffer()
                     .append(setAuthenticationArgs.getPublicKey())
-                    .append(WeIdConstant.REMOVED_AUTHENTICATION_TAG)
+                    .append(WeIdConstant.REMOVED_AUTHENTICATION_TAG)   // 在 authentication 上追加 `OBSOLETEAUTH` 就是 删除 authentication 了
                     .append(WeIdConstant.SEPARATOR)
                     .append(owner)
                     .toString();
