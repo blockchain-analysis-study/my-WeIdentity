@@ -82,6 +82,11 @@ public class MysqlDriver implements Persistence {
 
     private static Boolean isinit = false;
 
+    public static void main(String[] args) {
+        System.out.println("CHECK_TABLE_SQL:" + CHECK_TABLE_SQL);
+        System.out.println("=========================");
+        System.out.println("CREATE_TABLE_SQL:" + CREATE_TABLE_SQL);
+    }
     /**
      * the Constructor and init all domain.
      */
@@ -243,6 +248,8 @@ public class MysqlDriver implements Persistence {
      */
     private void initDomain() {
         Set<String> domainKeySet = analyzeDomainValue();
+
+        // 逐个遍历 各个 domain 的key, 去解析 sql  domain
         for (String domainKey : domainKeySet) {
             SqlExecutor sqlExecutor = new SqlExecutor(new SqlDomain(domainKey));
             sqlExecutor.resolveTableDomain(CHECK_TABLE_SQL, CREATE_TABLE_SQL);

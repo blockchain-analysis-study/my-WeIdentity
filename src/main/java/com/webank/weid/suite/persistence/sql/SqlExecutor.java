@@ -148,6 +148,8 @@ public class SqlExecutor {
             }
 
             rs = ps.executeQuery();
+
+            // 存放 每一列的 k-v
             Map<String, String> dataMap = null;
             if (rs.next()) {
                 dataMap = new HashMap<String, String>();
@@ -294,8 +296,11 @@ public class SqlExecutor {
      */
     public void resolveTableDomain(String checkTableSql, String createTableSql) {
         synchronized (TABLE_CACHE) {
+
+            // tableDomain 与 tableName的 Map
             String tableName = TABLE_CACHE.get(sqlDomain.getKey());
-            //说明本地没有此tableDomain
+
+            //说明本地没有此 tableDomain
             if (StringUtils.isBlank(tableName)) {
                 if (this.initLocalTable(checkTableSql)) {
                     return;

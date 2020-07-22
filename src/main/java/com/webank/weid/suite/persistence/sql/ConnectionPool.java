@@ -40,8 +40,13 @@ public class ConnectionPool {
     
     private static final Logger logger = LoggerFactory.getLogger(ConnectionPool.class);
 
+
+    // 数据库连接池
+    //
+    // (dataSourceName => source实例)
     private static  Map<String, BasicDataSource> connectionPoolMap = new ConcurrentHashMap<>();
-    
+
+    // 全局的  数据源名称 List
     private static final LinkedList<String> SOURCE_NAME_LIST = new LinkedList<String>();
     
     static {
@@ -170,10 +175,16 @@ public class ConnectionPool {
      */
     private static void init() {
         try {
+
+            // 读取配置文件中 所有数据源Name
             String dataSourceNameStr = 
                 PropertyUtils.getProperty(DataDriverConstant.JDBC_DATASOURCE_NAME);
             String[] dataSourceNames = dataSourceNameStr.split(",");
+
+            // 逐个遍历需要初始化的  数据源 名称
             for (String string : dataSourceNames) {
+
+                // 追加到 全局的  数据源名称 List中
                 SOURCE_NAME_LIST.add(string);
                 Properties properties = initProperties(string + ".");
                 BasicDataSource connectionPool = 
@@ -194,6 +205,8 @@ public class ConnectionPool {
     public static Connection getConnection(String dsName) {
         Connection conn = null;
         try {
+
+            // 从 db连接池中 根据 数据源名称 获取 conn实例
             conn = connectionPoolMap.get(dsName).getConnection();
             conn.setAutoCommit(true);
         } catch (Exception e) {

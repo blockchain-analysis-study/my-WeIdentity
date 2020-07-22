@@ -82,6 +82,7 @@ public class SqlDomain {
     private String value;
     
     /**
+     * 数据源名称
      * the database domain.
      */
     private String baseDomain;
